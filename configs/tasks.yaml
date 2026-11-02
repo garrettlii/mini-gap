@@ -1,0 +1,30 @@
+# Task definitions and the operating envelope (GaP's "Variational Automation" range).
+# task_sampler.py reads this. Eval splits in gap/eval/splits.py override parts of it.
+
+envelope:                      # where objects may spawn, world frame, meters / radians
+  x: [0.40, 0.60]
+  y: [-0.12, 0.12]
+  yaw: [-3.1416, 3.1416]
+  min_separation: 0.07         # center-to-center, so cubes never spawn touching
+
+zones:                         # must match the sites in workcell.xml
+  zone_a: {pos: [0.40, 0.30, 0.0], half: 0.07}
+  zone_b: {pos: [0.40, -0.30, 0.0], half: 0.07}
+
+tasks:
+  lift:
+    objects: [red_cube]
+    instructions: ["lift the red cube", "pick up the red block and hold it up"]
+    success: {object: red_cube, min_height: 0.10}
+  place:
+    objects: [red_cube]
+    instructions: ["put the red cube in zone A", "place the red block on the yellow square"]
+    success: {object: red_cube, zone: zone_a, gripper_open: true}
+  stack:
+    objects: [red_cube, green_cube]
+    instructions: ["stack the green cube on the red cube", "put green on top of red"]
+    success: {top: green_cube, bottom: red_cube, xy_tol: 0.015}
+  sort:                        # held out from Qwen training in Phase 6
+    objects: [red_cube, green_cube, blue_cube]
+    instructions: ["put red and blue in zone A and green in zone B"]
+    success: {assign: {red_cube: zone_a, blue_cube: zone_a, green_cube: zone_b}}

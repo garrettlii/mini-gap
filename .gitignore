@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+runs/*
+!runs/.gitkeep
+.cache/
+# Menagerie files are fetched by scripts/setup_mac.sh; only our workcell is committed.
+assets/franka_emika_panda/*
+!assets/franka_emika_panda/workcell.xml

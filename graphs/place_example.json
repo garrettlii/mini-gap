@@ -1,0 +1,20 @@
+{
+  "task": "place",
+  "nodes": [
+    {"id": "find",    "skill": "locate_object_gt",   "in": {"color": "red"}},
+    {"id": "plan",    "skill": "plan_top_grasp",     "in": {"pose": "find.pose"}, "params": {"approach_height": 0.08}},
+    {"id": "above",   "skill": "move_to_pose",       "in": {"pose": "plan.pre_pose"}},
+    {"id": "open",    "skill": "open_gripper"},
+    {"id": "reach",   "skill": "move_to_pose",       "in": {"pose": "plan.grasp_pose"}, "params": {"speed": 0.3}},
+    {"id": "close",   "skill": "close_gripper",      "params": {"force": 0.6}},
+    {"id": "check",   "skill": "verify_grasp",       "in": {"color": "red"}},
+    {"id": "target",  "skill": "compute_place_pose", "in": {"target": "zone_a"}},
+    {"id": "carry",   "skill": "move_above",         "in": {"pose": "target.pose"}, "params": {"height": 0.10}},
+    {"id": "lower",   "skill": "move_to_pose",       "in": {"pose": "target.pose"}, "params": {"speed": 0.3}},
+    {"id": "release", "skill": "open_gripper"},
+    {"id": "leave",   "skill": "retreat"}
+  ],
+  "edges": [
+    {"from": "check", "to": "find", "on": "fail", "max_retries": 2}
+  ]
+}

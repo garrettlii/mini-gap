@@ -1,0 +1,7 @@
+# Seed policy. gap/utils/seeds.py enforces that these never overlap.
+ranges:
+  rehearsal: [0, 50000]        # self-learning loop, SFT data, arbiter training
+  dev:       [50000, 60000]    # your own debugging and quick checks
+  eval:      [100000, 200000]  # Phase 7 only. Nothing trains on these.
+eval_stride: 10000             # each eval split gets its own block of eval seeds
+eval_splits: [nominal, pose, object, instruction, distractors, heldout_task]
