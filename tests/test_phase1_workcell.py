@@ -41,6 +41,17 @@ def test_reset_rejects_overlapping_cubes(cell):
         cell.reset(inst)
 
 
+def test_step_rejects_bad_shape_and_clips_ctrl(cell):
+    from gap.sim.task_sampler import sample
+    cell.reset(sample("place", seed=50006))
+    with pytest.raises(ValueError):
+        cell.step(0.5)  # a scalar must not broadcast to all 8 actuators
+    ctrl = cell.data.ctrl.copy()
+    ctrl[7] = 999.0
+    cell.step(ctrl)
+    assert cell.data.ctrl[7] == mb.GRIPPER_OPEN_CTRL, "stored ctrl must equal the applied (clamped) value"
+
+
 def test_sampler_is_deterministic_and_in_envelope():
     from gap.sim.task_sampler import sample, task_config
     env = task_config()["envelope"]
