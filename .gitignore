@@ -11,3 +11,4 @@ runs/*
 # Menagerie files are fetched by scripts/setup_mac.sh; only our workcell is committed.
 assets/franka_emika_panda/*
 !assets/franka_emika_panda/workcell.xml
+MUJOCO_LOG.TXT
