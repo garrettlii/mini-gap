@@ -33,6 +33,14 @@ def test_reset_places_objects(cell):
         assert np.linalg.norm(s["objects"][name].p - pose.p) < 2e-3
 
 
+def test_reset_rejects_overlapping_cubes(cell):
+    from gap.sim.task_sampler import sample
+    inst = sample("place", seed=50005)
+    inst.object_poses["green_cube"] = inst.object_poses["red_cube"].offset(dx=0.01)  # 3 cm overlap
+    with pytest.raises(RuntimeError, match="spawned overlapping"):
+        cell.reset(inst)
+
+
 def test_sampler_is_deterministic_and_in_envelope():
     from gap.sim.task_sampler import sample, task_config
     env = task_config()["envelope"]
