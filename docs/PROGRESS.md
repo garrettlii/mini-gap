@@ -2,6 +2,18 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 2: Workcell.get_state, task_sampler.sample, Workcell.reset
+- Works: `uv run pytest --phase 1 -k "state_has_contract_keys or reset_places_objects or
+  reset_rejects or sampler"` 4 passed; phase 0 still 9 passed. Sampler is identical across
+  processes (sha256 of 200 instances equal under 3 PYTHONHASHSEEDs). A 200-reset dev sweep
+  (4 tasks x 50 seeds) passes the 1 mm settle check. New test: reset raises on overlapping cubes.
+- Decisions: contacts are a sorted list of sorted body-name pairs. Yaw feature folded to
+  [-pi/4, pi/4) (raw kept as *_raw_yaw). Unused cubes park at (0.90, 0.60/0.45/-0.60), on the
+  table and beyond reach. reset() raises rather than repairs a bad spawn (keeps seed -> scene).
+- Next: step(ctrl, n), snapshot/restore (test_snapshot_restore_is_exact), render; then IK.
+- Open: min_separation 0.07 is too tight for the Phase 7 5 cm cube variant (corners overlap at
+  45 deg). ruff nits in workcell.py / task_sampler.py (import order, dict() literals).
+
 ## Session 1: Phase 0 done, Phase 1 kickoff
 - Works: setup_mac.sh re-runs clean; `uv run pytest` 9 passed / 30 skipped (phase-gated);
   sanity_check all ok except ".env has an API key" (key not added yet); runs/sanity/cameras.png
