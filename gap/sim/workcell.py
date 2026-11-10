@@ -167,7 +167,20 @@ class Workcell:
         enable_depth_rendering() / disable_depth_rendering() to switch modes.
         Cameras: mb.CAMERAS. Note the overhead view is blocked by the arm in the home pose.
         """
-        raise NotImplementedError
+        if self._renderer is None:
+            self._renderer = mujoco.Renderer(self.model, height = self.render_size[0], width = self.render_size[1])
+
+        self._renderer.update_scene(self.data, camera=camera)
+        if depth:
+            self._renderer.enable_depth_rendering()
+            try:
+                image = self._renderer.render()
+            finally:  # depth mode is sticky; never leave it on after a failed render
+                self._renderer.disable_depth_rendering()
+        else:
+            image = self._renderer.render()
+        return image
+        
 
     def close(self) -> None:
         if self._renderer is not None:
