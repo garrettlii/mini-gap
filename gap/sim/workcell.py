@@ -128,7 +128,17 @@ class Workcell:
 
         ctrl=None keeps the previous control. Return get_state() after stepping.
         """
-        raise NotImplementedError
+
+        if ctrl is not None:
+            ctrl = np.asarray(ctrl, dtype=float)
+            if ctrl.shape != (self.model.nu,):
+                raise ValueError(f"ctrl shape {ctrl.shape}, expected ({self.model.nu},)")
+            # MuJoCo clamps internally but stores the raw value; clip so logged ctrl == applied ctrl.
+            lo, hi = self.model.actuator_ctrlrange.T
+            self.data.ctrl[:] = np.clip(ctrl, lo, hi)
+        for _ in range(n):
+            mujoco.mj_step(self.model, self.data)
+        return self.get_state()
 
     # --------------------------------------------------------- snapshot/restore
     def snapshot(self) -> Any:
@@ -138,11 +148,16 @@ class Workcell:
         mujoco.mjtState.mjSTATE_INTEGRATION. Test: snapshot, step 200, restore, step 200
         again; both rollouts must match bit for bit.
         """
-        raise NotImplementedError
+        size = mujoco.mj_stateSize(self.model, mujoco.mjtState.mjSTATE_INTEGRATION)
+        snap = np.empty(size, dtype=np.float64)
+        mujoco.mj_getState(self.model, self.data, snap, mujoco.mjtState.mjSTATE_INTEGRATION)
+        return snap
 
     def restore(self, snap: Any) -> State:
         """Inverse of snapshot(). Remember mj_forward after mj_setState."""
-        raise NotImplementedError
+        mujoco.mj_setState(self.model, self.data, snap, mujoco.mjtState.mjSTATE_INTEGRATION)
+        mujoco.mj_forward(self.model, self.data)
+        return self.get_state()
 
     # ---------------------------------------------------------------- render
     def render(self, camera: str = "front", depth: bool = False) -> np.ndarray:
