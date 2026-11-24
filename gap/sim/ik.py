@@ -50,7 +50,7 @@ def solve_ik(
     damping: float = 1e-2,
     step: float = 0.5,
     max_iters: int = 200,
-    pos_tol: float = 2e-3,
+    pos_tol: float = 1e-3,
     rot_tol: float = 2e-2,
     rot_weight: float = 0.3,
 ) -> IKResult:

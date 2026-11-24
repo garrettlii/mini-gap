@@ -2,9 +2,18 @@
 
 from __future__ import annotations
 
+import numpy as np
+
+from gap.sim import model_builder as mb
+from gap.sim.ik import top_down_quat
+from gap.sim.motion import grasp_quat, heading, move_tcp
+from gap.skills._common import cube_body, reachable, touching
 from gap.skills.base import Param, Skill
 from gap.skills.registry import register
-from gap.types import SkillResult
+from gap.types import Pose, SkillResult
+
+MAX_WIDTH = 0.08  # meters, fully open
+CUBE_WIDTH_CTRL = mb.GRIPPER_OPEN_CTRL * 2 * mb.CUBE_HALF / MAX_WIDTH
 
 
 @register
@@ -21,16 +30,27 @@ class PlanTopGrasp(Skill):
     }
 
     def pre_margins(self, cell, inputs, params):
-        # Hint: IK residual for the grasp pose and its distance from the base. Arbiter features.
-        return {}
+        grasp = self._poses(cell, inputs["pose"], params)[1]
+        _, residual = reachable(cell, grasp)
+        return {"ik_residual": residual, "reach": float(np.hypot(*grasp.pos[:2]))}
 
     def run(self, cell, inputs, params) -> SkillResult:
-        # Hint: a cube is symmetric every 90 degrees; pick the yaw closest to the current hand
-        # yaw so the wrist does not spin half a turn.
-        raise NotImplementedError
+        pre, grasp = self._poses(cell, inputs["pose"], params)
+        return SkillResult(True, {"pre_pose": pre, "grasp_pose": grasp})
 
     def post(self, cell, inputs, outputs, params):
-        raise NotImplementedError
+        for port in ("pre_pose", "grasp_pose"):
+            if not reachable(cell, outputs[port])[0]:
+                return False, f"{port} {outputs[port].pos} is out of reach (IK did not converge)"
+        return True, ""
+
+    @staticmethod
+    def _poses(cell, cube: Pose, params) -> tuple[Pose, Pose]:
+        # A cube repeats every 90 degrees: grasp_quat picks the yaw nearest the hand's yaw.
+        q = grasp_quat(cube.quat, cell.get_state()["tcp"].quat)
+        q = top_down_quat(heading(q) + params["yaw_offset"])
+        grasp = Pose((cube.pos[0], cube.pos[1], cube.pos[2] + params["depth"]), q)
+        return grasp.offset(dz=params["approach_height"]), grasp
 
 
 @register
@@ -39,16 +59,29 @@ class CloseGripper(Skill):
     kind = "grasp"
     description = "Close the gripper and wait for the fingers to settle."
     params = {
-        "force": Param(0.6, 0.1, 1.0, "fraction of full closing command"),
+        "force": Param(0.6, 0.1, 1.0, "fraction of max squeeze; 1.0 = full closing command"),
         "wait_steps": Param(150, 20, 500, "sim steps to wait"),
     }
 
     def run(self, cell, inputs, params) -> SkillResult:
-        raise NotImplementedError
+        ctrl = cell.data.ctrl.copy()
+        # Squeeze grows with how far the command is below the cube's width, so scale from a
+        # cube-width opening (no squeeze) to fully closed (max squeeze).
+        ctrl[7] = CUBE_WIDTH_CTRL * (1 - params["force"])
+        n = int(params["wait_steps"])
+        cell.step(ctrl, n)
+        return SkillResult(True, sim_steps=n)
 
     def post(self, cell, inputs, outputs, params):
-        # Width above ~0 (something is between the fingers) and both fingers touch the object.
-        raise NotImplementedError
+        s = cell.get_state()
+        fingers = {"left_finger", "right_finger"}
+        touched = {c: touching(s, c, fingers) for c in mb.CUBES}
+        if any(t == fingers for t in touched.values()):
+            return True, ""
+        partial = [f"{c} ({', '.join(sorted(t))})" for c, t in touched.items() if t]
+        if partial:
+            return False, f"only one finger touches {partial[0]}: grasp is off center"
+        return False, f"fingers closed on nothing (width {s['gripper_width']:.3f} m)"
 
 
 @register
@@ -59,10 +92,15 @@ class OpenGripper(Skill):
     params = {"wait_steps": Param(100, 20, 500, "sim steps to wait")}
 
     def run(self, cell, inputs, params) -> SkillResult:
-        raise NotImplementedError
+        ctrl = cell.data.ctrl.copy()
+        ctrl[7] = mb.GRIPPER_OPEN_CTRL
+        n = int(params["wait_steps"])
+        cell.step(ctrl, n)
+        return SkillResult(True, sim_steps=n)
 
     def post(self, cell, inputs, outputs, params):
-        raise NotImplementedError
+        w = cell.get_state()["gripper_width"]
+        return (True, "") if w > 0.06 else (False, f"gripper only opened to {w:.3f} m")
 
 
 @register
@@ -78,7 +116,19 @@ class VerifyGrasp(Skill):
     }
 
     def run(self, cell, inputs, params) -> SkillResult:
-        raise NotImplementedError
+        if cube_body(inputs["color"]) is None:
+            return SkillResult(False, message=f"no cube with color {inputs['color']!r}")
+        tcp = cell.get_state()["tcp"]
+        ik = move_tcp(cell, tcp.offset(dz=params["lift"]), duration=0.5)
+        return SkillResult(ik.converged, message="" if ik.converged else "test lift unreachable")
 
     def post(self, cell, inputs, outputs, params):
-        raise NotImplementedError
+        s = cell.get_state()
+        body = cube_body(inputs["color"])
+        lifted = s["objects"][body].pos[2] - mb.CUBE_HALF
+        w = s["gripper_width"]
+        if lifted < 0.5 * params["lift"]:
+            return False, f"{body} rose only {lifted * 100:.1f} cm with the hand"
+        if not params["width_min"] <= w <= params["width_max"]:
+            return False, f"finger width {w:.3f} m outside [{params['width_min']}, {params['width_max']}]"
+        return True, ""
