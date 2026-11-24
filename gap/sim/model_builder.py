@@ -29,6 +29,8 @@ HOME_KEY = "home"
 TABLE_Z = 0.0
 CUBE_HALF = 0.02
 
+GRIP_GAIN = 10.0                    # gripper stiffness multiplier over Menagerie's
+
 # Franka's flange-to-fingertip-center distance.
 TCP_OFFSET = (0.0, 0.0, 0.1034)
 
@@ -49,6 +51,18 @@ def build_spec(xml_path: Path = WORKCELL_XML) -> mujoco.MjSpec:
                   rgba=[1, 0, 1, 0.6], group=3)
     # A camera looks along its own -z; quat (0,1,0,0) flips it to look along the hand's +z.
     hand.add_camera(name="wrist", pos=[0.06, 0.0, 0.03], quat=[0, 1, 0, 0], fovy=75)
+    # Gravity compensation, as Franka's own controller does: without it the position servos
+    # sag ~7 mm under the arm's weight and every TCP target is missed by that much.
+    for body in spec.bodies:
+        if body.name.startswith("link") or body.name in ("hand", "left_finger", "right_finger"):
+            body.gravcomp = 1.0
+    # Menagerie's gripper squeezes a 4 cm cube with ~1 N per finger, less than the cube's
+    # table friction, so a 0.5 mm off-center grasp stalls on one finger. 10x stiffer is ~10 N
+    # (the real hand: up to 70 N); damping scales by sqrt(10) to stay about as damped.
+    grip = spec.actuator(GRIPPER_ACTUATOR)
+    grip.gainprm[0] *= GRIP_GAIN
+    grip.biasprm[1] *= GRIP_GAIN
+    grip.biasprm[2] *= GRIP_GAIN ** 0.5
     return spec
 
 

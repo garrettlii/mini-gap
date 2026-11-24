@@ -28,3 +28,15 @@ splits) before making it. Format: date, decision, why, what it affects.
 - gap/sim/motion.py holds the ramped joint-space moves (smoothstep over 20 ms increments) so the
   oracle and the Phase 2 skills share one implementation. Oracle takes frame_sink (a list),
   like run_graph, instead of record=True.
+
+## 2026-11-24: gravity compensation on the arm (model_builder.py)
+- Arm links, hand, and fingers get gravcomp = 1. Why: the position servos sagged 6.7 mm at
+  home under gravity, so move_to_pose missed its 5 mm tolerance. Franka's real controller
+  compensates gravity too. Affects all physics; Phase 1 tests re-run after the change.
+- close_gripper.force: ctrl = 127.5 * (1 - force), so force is the fraction of the max squeeze
+  on a 4 cm cube. Why: 255 * (1 - force) put the default 0.6 at a 3.2 cm target, a 0.4 N squeeze
+  that left one finger off the cube.
+- Gripper actuator 10x stiffer (GRIP_GAIN; damping x sqrt(10)). Why: Menagerie's ~1 N per
+  finger on a 4 cm cube is below the cube's table friction (0.74 N), so any grasp 0.5 mm off
+  center stalled with one finger touching (0/20 at 0.5 mm offset). RGBD place went 14/30 ->
+  30/30 on dev seeds; GT unchanged at 30/30.
