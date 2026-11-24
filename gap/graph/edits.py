@@ -62,5 +62,28 @@ def apply_edit(graph: Graph, edit: EditOp) -> Graph:
     ("removed.pose") in later nodes' inputs? The validator should catch dangling refs, so
     the simplest correct choice is: remove the node and its edges, leave inputs alone, and
     let validate() report the dangling references back to the agent.
+
+    That is the choice made here. Raises ValueError when the edit names a node that does
+    not exist, with a message the agent can act on.
     """
-    raise NotImplementedError
+    g = graph.model_copy(deep=True)
+    ids = g.ids()
+    target = getattr(edit, "node", None) or getattr(edit, "after", None)
+    if target is not None and target not in ids:
+        raise ValueError(f"{edit.op}: no node {target!r}; nodes are {ids}")
+    if isinstance(edit, SetParam):
+        g.node(edit.node).params[edit.param] = edit.value
+    elif isinstance(edit, SwapSkill):
+        g.node(edit.node).skill = edit.skill
+    elif isinstance(edit, InsertAfter):
+        if edit.new.id in ids:
+            raise ValueError(f"insert_after: id {edit.new.id!r} is taken; pick a new id")
+        g.nodes.insert(ids.index(edit.after) + 1, edit.new.model_copy(deep=True))
+    elif isinstance(edit, AddEdge):
+        g.edges.append(edit.edge.model_copy(deep=True))
+    elif isinstance(edit, RemoveNode):
+        g.nodes = [n for n in g.nodes if n.id != edit.node]
+        g.edges = [e for e in g.edges if edit.node not in (e.src, e.to)]
+        if g.start == edit.node:
+            g.start = None
+    return g
