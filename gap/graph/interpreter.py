@@ -80,32 +80,50 @@ def run_graph(
 
 
 def _run_node(graph, node, cell, outputs, executor, learned_runner, visit) -> TraceEntry:
+    try:
+        inputs, error = _resolve_inputs(graph, node, outputs), None
+    except KeyError as e:
+        inputs, error = {}, f"KeyError: {e}"
+    learned = None
+    if executor == "learned" and learned_runner is not None:
+        def learned(c, ins, ps):
+            return learned_runner(node, c, ins, ps)
+    return run_skill(node.id, node.skill, cell, inputs, node.params, executor=executor,
+                     learned=learned, visit=visit, error=error)
+
+
+def run_skill(node_id: str, skill_name: str, cell: Workcell, inputs: dict[str, Any],
+              overrides: dict[str, float], *, executor: str = "skill",
+              learned: Callable[[Workcell, dict, dict], SkillResult] | None = None,
+              visit: int = 0, error: str | None = None) -> TraceEntry:
+    """pre -> run (or the learned executor) -> post for one skill call, as a TraceEntry.
+
+    Shared by graphs and the free-form code baseline so both are judged identically.
+    A non-None `error` (e.g. an unresolvable input) records a failure without running.
+    """
     before, t0, sim0 = cell.get_state(), time.perf_counter(), cell.data.time
-    inputs: dict[str, Any] = {}
     params: dict[str, float] = {}
     outs: dict[str, Any] = {}
     pre_ok = post_ok = False
-    error: str | None = None
     try:
-        skill = registry.get(node.skill)()
-        inputs = _resolve_inputs(graph, node, outputs)
-        params = skill.resolve_params(node.params)
-        pre_ok, why = skill.pre(cell, inputs, params)
-        if not pre_ok:
-            error = f"pre-check failed: {why}"
-        else:
-            run = learned_runner if executor == "learned" and learned_runner else None
-            res = run(node, cell, inputs, params) if run else skill.run(cell, inputs, params)
-            outs = res.outputs
-            if not res.ok:
-                error = f"run failed: {res.message}"
+        if error is None:
+            skill = registry.get(skill_name)()
+            params = skill.resolve_params(overrides)
+            pre_ok, why = skill.pre(cell, inputs, params)
+            if not pre_ok:
+                error = f"pre-check failed: {why}"
             else:
-                post_ok, why = skill.post(cell, inputs, outs, params)
-                error = None if post_ok else f"post-check failed: {why}"
+                res = learned(cell, inputs, params) if learned else skill.run(cell, inputs, params)
+                outs = res.outputs
+                if not res.ok:
+                    error = f"run failed: {res.message}"
+                else:
+                    post_ok, why = skill.post(cell, inputs, outs, params)
+                    error = None if post_ok else f"post-check failed: {why}"
     except Exception as e:  # noqa: BLE001 -- any exception is a node failure, not a crash
         error = f"{type(e).__name__}: {e}"
     steps = round((cell.data.time - sim0) / cell.model.opt.timestep)
-    return TraceEntry(node.id, node.skill, executor, params, inputs, before, cell.get_state(),
+    return TraceEntry(node_id, skill_name, executor, params, inputs, before, cell.get_state(),
                       outs, pre_ok, post_ok, steps, time.perf_counter() - t0, visit, error)
 
 
