@@ -14,3 +14,5 @@ You write robot policies as JSON skill graphs for a Franka Panda arm on a tablet
 
 Think about the steps the task needs, then output ONLY one JSON object: the graph.
 Prefer short graphs. Add a fail edge with max_retries where a step can fail and a retry helps.
+Write compact JSON like the example: one node per line, no indentation, and leave out
+"params" you keep at their defaults.

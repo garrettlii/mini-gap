@@ -48,7 +48,38 @@ class MLXBackend:
         self.repo, self.adapter_path = repo, adapter_path
 
     def complete(self, system, messages, *, temperature, max_tokens) -> LLMResponse:
-        raise NotImplementedError
+        from mlx_lm import generate
+        from mlx_lm.sample_utils import make_sampler
+
+        model, tok = _load_mlx(self.repo, self.adapter_path)
+        chat = [{"role": "system", "content": system}, *messages]
+        # Qwen3.5 thinks by default; graphs and edits are short, so answer directly.
+        prompt = tok.apply_chat_template(chat, add_generation_prompt=True, tokenize=False,
+                                         enable_thinking=False)
+        text = generate(model, tok, prompt, max_tokens=max_tokens,
+                        sampler=make_sampler(temp=temperature))
+        return LLMResponse(text, len(tok.encode(prompt)), len(tok.encode(text)))
+
+
+_MLX_CACHE: dict[tuple[str, str | None], tuple] = {}
+
+
+def _load_mlx(repo: str, adapter_path: str | None):
+    """Load each (model, adapter) once per process: loading takes seconds, calls take ~1."""
+    key = (repo, adapter_path)
+    if key not in _MLX_CACHE:
+        from mlx_lm import load
+        _MLX_CACHE[key] = load(repo, adapter_path=adapter_path)
+    return _MLX_CACHE[key]
+
+
+def local_llm(run: RunDir | None = None, role: str = "agent",
+              adapter_path: str | None = None) -> LLM:
+    """The local Qwen from configs/models.yaml. The only backend this project uses (no paid APIs)."""
+    import yaml
+    cfg = yaml.safe_load((REPO / "configs" / "models.yaml").read_text())
+    return LLM(MLXBackend(cfg["local"]["mlx_repo"], adapter_path), run=run, role=role,
+               cache_dir=REPO / cfg.get("cache_dir", ".cache/llm"))
 
 
 class LLM:
