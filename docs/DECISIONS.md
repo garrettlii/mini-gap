@@ -10,3 +10,8 @@ splits) before making it. Format: date, decision, why, what it affects.
   Why: they attach to the hand body inside Menagerie's panda.xml, which an including file can't edit.
 - Tabletop at z = 0 with the robot base on it; overhead camera is occluded in the home pose,
   so perception needs a camera-clear arm pose first (as GaP stages its cameras).
+
+## 2026-11-24: local LLM only
+- No paid API calls. The planner, specialists, and loop run on local Qwen (configs/models.yaml
+  `local`); the frontier rows of the Phase 6 and Phase 7 tables are dropped. Phase 6 SFT data
+  comes from the local model's own successful edits (rejection sampling) instead of frontier logs.
