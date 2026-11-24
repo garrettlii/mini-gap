@@ -6,7 +6,16 @@ Agents are graded by it; they must never be able to read it.
 
 from __future__ import annotations
 
+import numpy as np
+
+from gap.sim import model_builder as mb
+from gap.sim.task_sampler import task_config
 from gap.types import State
+
+Z_TOL = 0.005          # meters: "resting" means within this of the expected height
+OPEN_WIDTH = 0.045     # meters: wider than a 4 cm cube, so the gripper has let go
+REST_STEPS = 100       # 0.2 s hold for the at-rest check
+REST_TOL = 1e-3        # meters an object may drift during the hold
 
 
 def check(task: str, state: State, task_cfg: dict) -> bool:
@@ -19,5 +28,36 @@ def check(task: str, state: State, task_cfg: dict) -> bool:
     sort:  every object in its assigned zone
     Also require objects to be at rest (check velocity, or step a few times and compare);
     a cube sliding through the zone is not a success.
+
+    This is the static part; settled_success() adds the at-rest check.
     """
-    raise NotImplementedError
+    c = task_cfg["success"]
+    obj = state["objects"]
+    if task == "lift":
+        return obj[c["object"]].pos[2] - mb.CUBE_HALF >= c["min_height"]
+    if task == "place":
+        opened = state["gripper_width"] >= OPEN_WIDTH or not c.get("gripper_open", False)
+        return _resting_in_zone(obj[c["object"]].pos, c["zone"]) and opened
+    if task == "stack":
+        top, bottom = obj[c["top"]].p, obj[c["bottom"]].p
+        return (np.linalg.norm(top[:2] - bottom[:2]) <= c["xy_tol"]
+                and abs(top[2] - bottom[2] - 2 * mb.CUBE_HALF) <= Z_TOL
+                and abs(bottom[2] - mb.CUBE_HALF) <= Z_TOL)
+    if task == "sort":
+        return all(_resting_in_zone(obj[o].pos, z) for o, z in c["assign"].items())
+    raise ValueError(f"unknown task {task!r}")
+
+
+def settled_success(cell) -> bool:
+    """check() on the cell's task, after holding the controls REST_STEPS and seeing no drift."""
+    task = cell.instance.task
+    before = cell.get_state()["objects"]
+    after = cell.step(None, REST_STEPS)
+    still = all(np.linalg.norm(after["objects"][k].p - p.p) <= REST_TOL for k, p in before.items())
+    return still and check(task, after, task_config()["tasks"][task])
+
+
+def _resting_in_zone(pos, zone: str) -> bool:
+    z = task_config()["zones"][zone]
+    return (abs(pos[0] - z["pos"][0]) <= z["half"] and abs(pos[1] - z["pos"][1]) <= z["half"]
+            and abs(pos[2] - mb.CUBE_HALF) <= Z_TOL)
