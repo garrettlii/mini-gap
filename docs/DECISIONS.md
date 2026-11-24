@@ -40,3 +40,19 @@ splits) before making it. Format: date, decision, why, what it affects.
   finger on a 4 cm cube is below the cube's table friction (0.74 N), so any grasp 0.5 mm off
   center stalled with one finger touching (0/20 at 0.5 mm offset). RGBD place went 14/30 ->
   30/30 on dev seeds; GT unchanged at 30/30.
+
+## 2026-11-24: Phase 2-3 design choices
+- move_joints holds at the goal until every joint is within 1 mrad (0.1 s min, 1 s max)
+  instead of a fixed 0.2 s. Why: the servos are overdamped and creep in after long moves;
+  a fixed hold left ~6 mm TCP error on 4/30 sort episodes.
+- compute_place_pose picks the zone slot (center or a corner 4.5 cm out on each axis) farthest
+  from cubes already resting in the zone. Why: sort puts two cubes in zone A; a single center
+  spot stacked them. Description updated so agents know.
+- locate_object_rgbd swings the arm to a camera-clear pose for the picture and back. Why: the
+  arm blocks the overhead camera at home, and leaving it aside seeded later IK in a twisted pose.
+- Recording lives in Workcell.step (cell.frame_sink) rather than threaded through helpers.
+- Interpreter: fail-edge budget counts fail-edge traversals per source node, not visits.
+  run_graph takes learned_runner(node, cell, inputs, params) for the Phase 6b learned executor.
+  Episode sim_steps come from the sim clock, not SkillResult.sim_steps.
+- Example graphs for stack and sort are in graphs/ (dev-seed check: place 50/50, stack 50/50,
+  sort 48/50 as of this commit).
