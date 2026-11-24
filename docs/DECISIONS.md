@@ -15,3 +15,16 @@ splits) before making it. Format: date, decision, why, what it affects.
 - No paid API calls. The planner, specialists, and loop run on local Qwen (configs/models.yaml
   `local`); the frontier rows of the Phase 6 and Phase 7 tables are dropped. Phase 6 SFT data
   comes from the local model's own successful edits (rejection sampling) instead of frontier logs.
+
+## 2026-11-24: Phase 1 design choices
+- IK: when a joint sits at a limit and the step pushes it further, its Jacobian column is
+  zeroed and the step re-solved. If a start fails, retry with joint 7 seeded at
+  (-2.5, -1.25, 0, 1.25, 2.5). Why: the wrist turns less than a full circle, so the
+  shortest-rotation step can drive it into its limit when the target is the long way round.
+- top_down_quat(yaw): yaw is the TCP x-axis heading; fingers close along yaw - pi/2; home = pi/2.
+- success.check is static on one State. The at-rest requirement is settled_success(cell):
+  hold ctrl 0.2 s and require < 1 mm drift. Interpreter and oracle call settled_success.
+  Thresholds: resting = |z - expected| <= 5 mm; gripper open = width >= 4.5 cm.
+- gap/sim/motion.py holds the ramped joint-space moves (smoothstep over 20 ms increments) so the
+  oracle and the Phase 2 skills share one implementation. Oracle takes frame_sink (a list),
+  like run_graph, instead of record=True.

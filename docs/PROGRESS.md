@@ -2,6 +2,15 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 3: Phase 1 done
+- Works: `uv run pytest --phase 1 --runslow` 18 passed; oracle place 100/100 dev seeds
+  (Wilson [0.96, 1.00]). IK converges on all 20 test targets incl. wrist-limit cases.
+  `scripts/record_oracle.py <seeds>` saves MP4s into a RunDir.
+- Decisions: see DECISIONS.md 2026-11-24 (local LLM only, Phase 1 choices).
+  Private GitHub remote created (garrettlii/mini-gap).
+- Next: Phase 2 skills (oracle rewritten as skill calls, >= 95%).
+- Open: frontier rows dropped (no API spend). Pre-existing ruff nits in workcell/task_sampler.
+
 ## Session 2: Workcell.get_state, task_sampler.sample, Workcell.reset
 - Works: `uv run pytest --phase 1 -k "state_has_contract_keys or reset_places_objects or
   reset_rejects or sampler"` 4 passed; phase 0 still 9 passed. Sampler is identical across
