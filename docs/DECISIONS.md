@@ -69,3 +69,24 @@ splits) before making it. Format: date, decision, why, what it affects.
   lines. Not a security sandbox; acceptable because the code comes from the local model.
 - Prompts are filled with context.fill (plain replace), not str.format, so literal JSON braces
   in prompt files survive.
+
+## 2026-11-24: two local models, and the Phase 5 loop
+- configs/models.yaml gets `planner_repo` (Qwen3.5-4B-4bit) beside `mlx_repo` (2B). The 4B
+  writes whole graphs and code and plays the critic; the 2B proposes single-node edits and
+  is the model Phase 6 trains. Why: the 2B could not produce a valid 12-node graph in 3
+  attempts (repetition loops, invented ports); the 4B produced valid place and stack graphs
+  on the first attempt (~60 s each once loaded). It also stands in for the dropped frontier rows.
+- MLXBackend reseeds mx.random before every call, so a repeated (prompt, temperature) gives the
+  same sample. Planner, coder, and specialist retry at temperature > 0 so retries differ.
+- Planner output is parsed from the first complete JSON object (raw_decode); trailing text
+  is ignored. "in"/"params" entries the model fills with null or {} are dropped before
+  validation. Validator feedback lists at most a few short errors.
+- Loop routing: for the most-blamed node, the specialist is asked twice about that node, then
+  once about each upstream suspect (for grasp failures: earlier grasp-pipeline nodes and the
+  nodes that consume their outputs; always: data-flow ancestors), at most 4 nodes. The critic
+  then gets the full report. Why: a too-deep grasp shows up as a failed close/verify, not at
+  plan_top_grasp, so asking only the blamed node can never find the fix.
+- Seeded bugs (gap/rehearsal/seeded_bugs.py) give a repair benchmark with a known answer:
+  diagonal_grasp, grasp_too_deep, tight_verify, no_release. Each breaks place, stack, and
+  sort (0/12 dev seeds each). scripts/run_loop.py optimizes on one block of rehearsal seeds
+  and reports a disjoint block (offset 40,000) as held-out.

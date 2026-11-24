@@ -34,13 +34,13 @@ class Policy:
 
 def build_policy(method: str, instruction: str, run: RunDir | None = None) -> Policy:
     if method == "code":
-        code, log = write_code(local_llm(run, role="coder"), instruction)
+        code, log = write_code(local_llm(run, role="coder", model="planner_repo"), instruction)
         return Policy(method, instruction, code=code, log=log)
     if method not in METHODS:
         raise ValueError(f"unknown method {method!r}; one of {METHODS}")
-    graph, log = plan(local_llm(run, role="planner"), instruction)
+    graph, log = plan(local_llm(run, role="planner", model="planner_repo"), instruction)
     if method == "graph_multi" and graph is not None:
-        graph, edits = review(local_llm(run, role="critic"), graph)
+        graph, edits = review(local_llm(run, role="critic", model="planner_repo"), graph)
         log += [f"critic kept: {e.model_dump_json()}" for e in edits]
     return Policy(method, instruction, graph=graph, log=log)
 

@@ -1,6 +1,7 @@
 # Fill these in during Phase 0.
 local:
   # Pick by RAM: 8 GB -> 0.8B, 16 GB -> 2B, 24 GB -> 4B (4-bit). Exact mlx-community repo id.
-  mlx_repo: mlx-community/Qwen3.5-2B-4bit
+  mlx_repo: mlx-community/Qwen3.5-2B-4bit      # repair model (specialist; Phase 6 trains it)
+  planner_repo: mlx-community/Qwen3.5-4B-4bit  # writes whole graphs and code; critic
   vlm_repo: ""                 # optional, for the Qwen vision locator (Phase 2 stretch)
 cache_dir: .cache/llm          # responses cached by request hash

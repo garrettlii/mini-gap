@@ -10,6 +10,7 @@ from pathlib import Path
 
 from gap.agents.context import CODE_RULES, WORKCELL, fill
 from gap.agents.llm import LLM
+from gap.agents.planner import RETRY_TEMPERATURE
 from gap.skills import catalog_text
 
 PROMPT = (Path(__file__).parent / "prompts" / "coder.md").read_text()
@@ -21,8 +22,9 @@ def write_code(llm: LLM, instruction: str, max_attempts: int = 3) -> tuple[str |
                   instruction=instruction)
     messages = [{"role": "user", "content": f"Task: {instruction}\nOutput the code."}]
     log: list[str] = []
-    for _ in range(max_attempts):
-        text = llm.complete(system, messages, max_tokens=1500).text
+    for attempt in range(max_attempts):
+        text = llm.complete(system, messages, max_tokens=1500,
+                            temperature=0.0 if attempt == 0 else RETRY_TEMPERATURE).text
         code = extract_code(text)
         problem = check_code(code)
         log.append(problem or "valid")

@@ -48,10 +48,12 @@ class MLXBackend:
         self.repo, self.adapter_path = repo, adapter_path
 
     def complete(self, system, messages, *, temperature, max_tokens) -> LLMResponse:
+        import mlx.core as mx
         from mlx_lm import generate
         from mlx_lm.sample_utils import make_sampler
 
         model, tok = _load_mlx(self.repo, self.adapter_path)
+        mx.random.seed(0)  # same prompt + temperature -> same sample, run to run
         chat = [{"role": "system", "content": system}, *messages]
         # Qwen3.5 thinks by default; graphs and edits are short, so answer directly.
         prompt = tok.apply_chat_template(chat, add_generation_prompt=True, tokenize=False,
@@ -74,11 +76,15 @@ def _load_mlx(repo: str, adapter_path: str | None):
 
 
 def local_llm(run: RunDir | None = None, role: str = "agent",
-              adapter_path: str | None = None) -> LLM:
-    """The local Qwen from configs/models.yaml. The only backend this project uses (no paid APIs)."""
+              adapter_path: str | None = None, model: str = "mlx_repo") -> LLM:
+    """A local Qwen from configs/models.yaml `local` (no paid APIs).
+
+    model="mlx_repo" is the small repair model Phase 6 trains; model="planner_repo" is the
+    larger model that writes whole graphs and code.
+    """
     import yaml
     cfg = yaml.safe_load((REPO / "configs" / "models.yaml").read_text())
-    return LLM(MLXBackend(cfg["local"]["mlx_repo"], adapter_path), run=run, role=role,
+    return LLM(MLXBackend(cfg["local"][model], adapter_path), run=run, role=role,
                cache_dir=REPO / cfg.get("cache_dir", ".cache/llm"))
 
 
