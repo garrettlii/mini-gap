@@ -56,3 +56,16 @@ splits) before making it. Format: date, decision, why, what it affects.
   Episode sim_steps come from the sim clock, not SkillResult.sim_steps.
 - Example graphs for stack and sort are in graphs/ (dev-seed check: place 50/50, stack 50/50,
   sort 48/50 as of this commit).
+
+## 2026-11-24: Phase 4 methods and prompts
+- Methods: `code` (free-form Python over the skills, run by gap/graph/code_exec.py with the
+  same pre/post checks and success check), `graph_single` (planner with up to 3 validator-
+  feedback attempts), `graph_multi` (planner, then one critic review whose structural edits are
+  kept only if the graph still validates). Defined in gap/agents/methods.py.
+- Every prompt carries ONE worked example for a task outside the task set ("pick up the blue
+  cube and hold it above zone B"), as a graph for planners and as code for the coder. Why: a 2B
+  model cannot assemble a 12-node graph from the catalog alone; both methods get the same help.
+- Code policies run with a builtin whitelist, no imports, <= 60 skill calls, and <= 100k policy
+  lines. Not a security sandbox; acceptable because the code comes from the local model.
+- Prompts are filled with context.fill (plain replace), not str.format, so literal JSON braces
+  in prompt files survive.

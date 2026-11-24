@@ -2,14 +2,15 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
-## Session 3: Phase 1 done
-- Works: `uv run pytest --phase 1 --runslow` 18 passed; oracle place 100/100 dev seeds
-  (Wilson [0.96, 1.00]). IK converges on all 20 test targets incl. wrist-limit cases.
-  `scripts/record_oracle.py <seeds>` saves MP4s into a RunDir.
-- Decisions: see DECISIONS.md 2026-11-24 (local LLM only, Phase 1 choices).
-  Private GitHub remote created (garrettlii/mini-gap).
-- Next: Phase 2 skills (oracle rewritten as skill calls, >= 95%).
-- Open: frontier rows dropped (no API spend). Pre-existing ruff nits in workcell/task_sampler.
+## Session 3: Phases 1-3 done, Phase 4 harness built
+- Works: `uv run pytest --phase 4 --runslow` covers phases 0-4. Oracle place 100/100 dev seeds;
+  place graph 100/100 (within 2 pts of the oracle). Example graphs on 50 dev seeds: place 50/50,
+  stack 50/50, sort 48/50. RGBD locator 0.8 mm mean error. Phase 4 harness tests (scripted
+  backend) pass; local Qwen planner calls take ~50 s each on this Mac.
+- Decisions: DECISIONS.md 2026-11-24 entries (local LLM only, IK restarts, gravity compensation,
+  stiffer gripper, zone slots, adaptive settle, Phase 4 methods and worked example).
+- Next: run scripts/first_shot.py for the Phase 4 table; then Phase 5 rehearsal loop.
+- Open: 2B planner first-shot quality unknown; frontier rows dropped (no API spend).
 
 ## Session 2: Workcell.get_state, task_sampler.sample, Workcell.reset
 - Works: `uv run pytest --phase 1 -k "state_has_contract_keys or reset_places_objects or
