@@ -16,12 +16,11 @@ from gap.sim.workcell import Workcell
 from gap.types import Pose, State
 
 CHUNK = 10          # sim steps per ramp increment (20 ms at dt = 2 ms)
-VIDEO_FPS = 25      # one frame every 2 chunks
-SETTLE_S = 0.2      # hold at the goal so the servos catch up
+MIN_HOLD_S, MAX_HOLD_S = 0.1, 1.0   # hold at the goal so the servos catch up
+SETTLE_RAD = 1e-3   # per-joint tracking error that counts as arrived
 
 
-def move_joints(cell: Workcell, q: np.ndarray, duration: float = 1.0,
-                frame_sink: list | None = None) -> State:
+def move_joints(cell: Workcell, q: np.ndarray, duration: float = 1.0) -> State:
     """Ramp the 7 arm servo targets from the current command to q, then hold briefly."""
     ctrl = cell.data.ctrl.copy()
     q0 = ctrl[:7].copy()
@@ -29,24 +28,30 @@ def move_joints(cell: Workcell, q: np.ndarray, duration: float = 1.0,
     for i in range(1, n + 1):
         s = i / n
         ctrl[:7] = q0 + (q - q0) * (3 * s**2 - 2 * s**3)  # smoothstep: zero start/end speed
-        _advance(cell, ctrl, CHUNK, frame_sink)
-    return _advance(cell, ctrl, round(SETTLE_S / cell.model.opt.timestep), frame_sink)
+        cell.step(ctrl, CHUNK)
+    # The servos are overdamped and creep in after a long move: hold until every joint is
+    # within SETTLE_RAD of its target (at least MIN_HOLD_S, at most MAX_HOLD_S if blocked).
+    held, state = 0.0, cell.get_state()
+    while held < MAX_HOLD_S:
+        state = cell.step(ctrl, CHUNK)
+        held += CHUNK * cell.model.opt.timestep
+        if held >= MIN_HOLD_S and np.abs(np.asarray(state["qpos_arm"]) - q).max() < SETTLE_RAD:
+            break
+    return state
 
 
-def move_tcp(cell: Workcell, pose: Pose, duration: float = 1.0,
-             frame_sink: list | None = None) -> IKResult:
+def move_tcp(cell: Workcell, pose: Pose, duration: float = 1.0) -> IKResult:
     """IK from the current command, then move there if IK converged. Returns the IK result."""
     ik = solve_ik(cell.model, cell.data, pose, q_init=cell.data.ctrl[:7].copy())
     if ik.converged:
-        move_joints(cell, ik.q, duration, frame_sink)
+        move_joints(cell, ik.q, duration)
     return ik
 
 
-def set_gripper(cell: Workcell, open_: bool, duration: float = 0.5,
-                frame_sink: list | None = None) -> State:
+def set_gripper(cell: Workcell, open_: bool, duration: float = 0.5) -> State:
     ctrl = cell.data.ctrl.copy()
     ctrl[7] = mb.GRIPPER_OPEN_CTRL if open_ else mb.GRIPPER_CLOSED_CTRL
-    return _advance(cell, ctrl, round(duration / cell.model.opt.timestep), frame_sink)
+    return cell.step(ctrl, round(duration / cell.model.opt.timestep))
 
 
 def heading(quat) -> float:
@@ -64,15 +69,3 @@ def grasp_quat(cube_quat, tcp_quat) -> tuple[float, float, float, float]:
     d = (d + np.pi / 4) % (np.pi / 2) - np.pi / 4
     return top_down_quat(now + d)
 
-
-def _advance(cell: Workcell, ctrl: np.ndarray, steps: int, frame_sink: list | None) -> State:
-    if frame_sink is None:
-        return cell.step(ctrl, steps)
-    dt = cell.model.opt.timestep
-    per_frame = round(1 / (VIDEO_FPS * dt))
-    state = cell.step(ctrl, 0)
-    for _ in range(steps):
-        state = cell.step(None, 1)
-        if round(cell.data.time / dt) % per_frame == 0:
-            frame_sink.append(cell.render("front"))
-    return state

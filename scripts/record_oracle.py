@@ -9,10 +9,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from gap.sim.motion import VIDEO_FPS
 from gap.sim.oracle import run_place_oracle
 from gap.sim.task_sampler import sample
-from gap.sim.workcell import Workcell
+from gap.sim.workcell import VIDEO_FPS, Workcell
 from gap.utils.runs import RunDir
 from gap.utils.video import save_mp4
 

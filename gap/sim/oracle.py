@@ -25,6 +25,7 @@ RELEASE_Z = 0.03   # TCP height at release: cube bottom ~1 cm above the zone
 def run_place_oracle(cell: Workcell, instance: TaskInstance,
                      frame_sink: list | None = None) -> bool:
     """Return success. Frames from the front camera go to frame_sink if given."""
+    cell.frame_sink = frame_sink
     s = cell.reset(instance)
     cube = s["objects"]["red_cube"]
     q = grasp_quat(cube.quat, s["tcp"].quat)
@@ -34,8 +35,8 @@ def run_place_oracle(cell: Workcell, instance: TaskInstance,
             ((zx, zy, HOVER), 1.0)]
     for step in path:
         if isinstance(step, str):
-            set_gripper(cell, step == "open", frame_sink=frame_sink)
-        elif not move_tcp(cell, Pose(step[0], q), step[1], frame_sink).converged:
+            set_gripper(cell, step == "open")
+        elif not move_tcp(cell, Pose(step[0], q), step[1]).converged:
             return False
     return settled_success(cell)
 

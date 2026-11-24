@@ -22,6 +22,7 @@ from gap.sim import model_builder as mb
 from gap.types import State, TaskInstance, Pose
 
 SETTLE_STEPS = 100   # 0.2 s at dt = 2 ms: soft contacts come to rest
+VIDEO_FPS = 25       # frames per sim second when frame_sink is set
 SETTLE_TOL = 1e-3    # meters; a cube moving more than this while settling spawned badly
 
 
@@ -32,6 +33,7 @@ class Workcell:
         self.render_size = render_size          # (height, width)
         self._renderer: mujoco.Renderer | None = None  # create lazily: rehearsal workers rarely render
         self.instance: TaskInstance | None = None
+        self.frame_sink: list | None = None     # set to a list to record VIDEO_FPS front-camera frames
 
     # ------------------------------------------------------------------ state
     def get_state(self) -> State:
@@ -136,8 +138,12 @@ class Workcell:
             # MuJoCo clamps internally but stores the raw value; clip so logged ctrl == applied ctrl.
             lo, hi = self.model.actuator_ctrlrange.T
             self.data.ctrl[:] = np.clip(ctrl, lo, hi)
+        dt = self.model.opt.timestep
+        per_frame = round(1 / (VIDEO_FPS * dt))
         for _ in range(n):
             mujoco.mj_step(self.model, self.data)
+            if self.frame_sink is not None and round(self.data.time / dt) % per_frame == 0:
+                self.frame_sink.append(self.render("front"))
         return self.get_state()
 
     # --------------------------------------------------------- snapshot/restore
