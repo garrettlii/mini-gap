@@ -100,3 +100,16 @@ def test_run_eval_writes_cells(tmp_path, monkeypatch):
                    "--models", str(tmp_path)])
     metrics = json.loads(next((tmp_path / "runs").glob("*/metrics.json")).read_text())
     assert [(c["task"], c["n"]) for c in metrics["cells"]] == [("place", 2), ("stack", 2)]
+
+
+def test_render_refills_marked_blocks_idempotently(tmp_path):
+    import json
+
+    from gap.eval.report import render
+    cells = [{"method": "m", "split": "nominal", "task": t, "successes": 8, "n": 10}
+             for t in ("place", "stack")]
+    (tmp_path / "r.json").write_text(json.dumps({"cells": cells}))
+    text = "x <!-- rate: r m nominal -->old<!-- /rate --> y\n<!-- table: r by=task -->\n<!-- /table -->"
+    once = render(text, tmp_path)
+    assert render(once, tmp_path) == once
+    assert "(16/20)" in once and "| m | 0.80" in once and once.startswith("x <!-- rate")

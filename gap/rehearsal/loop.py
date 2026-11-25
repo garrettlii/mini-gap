@@ -90,10 +90,8 @@ def _proposals(graph: Graph, report: FailureReport, specialist: Specialist, crit
     top = report.blamed[0]
     category = max(top.categories, key=top.categories.get)
     if top.node_id != END and category not in STRUCTURAL:
-        base = report.to_text(top.node_id)
         for i, node in enumerate(suspects(graph, top.node_id, category)):
-            text = base if i == 0 else (base + f"\nThe failure shows up at node {top.node_id!r}; "
-                                        f"node {node!r} runs earlier and may cause it.")
+            text = node_text(report, node)
             for _ in range(cfg.proposals_per_iter if i == 0 else 1):
                 seen = text + ("\nAlready tried without improvement: " + "; ".join(tried[node])
                                if tried.get(node) else "")
@@ -109,6 +107,15 @@ def _proposals(graph: Graph, report: FailureReport, specialist: Specialist, crit
         if _describe(edit) not in tried.setdefault(END, []):
             tried[END].append(_describe(edit))
             yield edit, END, text
+
+
+def node_text(report: FailureReport, node: str) -> str:
+    """What the specialist sees about `node`: the most-blamed node's section, plus a pointer
+    when `node` is an earlier suspect rather than the node that failed."""
+    top = report.blamed[0].node_id
+    base = report.to_text(top)
+    return base if node == top else (base + f"\nThe failure shows up at node {top!r}; "
+                                     f"node {node!r} runs earlier and may cause it.")
 
 
 def suspects(graph: Graph, node_id: str, category: str, limit: int = 4) -> list[str]:

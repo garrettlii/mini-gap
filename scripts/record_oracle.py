@@ -17,7 +17,7 @@ from gap.utils.video import save_mp4
 
 seeds = [int(a) for a in sys.argv[1:]] or [50000]
 run = RunDir("oracle_video", {"task": "place", "seeds": seeds})
-cell = Workcell(render_size=(480, 640))
+cell = Workcell(video_size=(480, 640))
 wins = 0
 for seed in seeds:
     frames: list = []

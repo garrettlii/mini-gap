@@ -31,7 +31,8 @@ DEPTH_SD_COEF = 2.85e-3           # depth noise sigma = coef * z^2 (Kinect-style
 
 
 class Workcell:
-    def __init__(self, render_size: tuple[int, int] = (240, 320), camera_noise: bool = False):
+    def __init__(self, render_size: tuple[int, int] = (240, 320), camera_noise: bool = False,
+                 video_size: tuple[int, int] | None = None):
         self.model: mujoco.MjModel = mb.build_model()
         self.camera_noise = camera_noise
         cam = self.model.camera("overhead").id
@@ -45,6 +46,9 @@ class Workcell:
         self.data: mujoco.MjData = mujoco.MjData(self.model)
         self.render_size = render_size          # (height, width)
         self._renderer: mujoco.Renderer | None = None  # create lazily: rehearsal workers rarely render
+        # video frames get their own size so recording never changes what perception sees
+        self.video_size = video_size or render_size
+        self._video_renderer: mujoco.Renderer | None = None
         self.instance: TaskInstance | None = None
         self.frame_sink: list | None = None     # set to a list to record VIDEO_FPS front-camera frames
 
@@ -193,7 +197,7 @@ class Workcell:
         for _ in range(n):
             mujoco.mj_step(self.model, self.data)
             if self.frame_sink is not None and round(self.data.time / dt) % per_frame == 0:
-                self.frame_sink.append(self.render("front"))
+                self.frame_sink.append(self._video_frame())
         return self.get_state()
 
     # --------------------------------------------------------- snapshot/restore
@@ -240,7 +244,18 @@ class Workcell:
         return image
         
 
+    def _video_frame(self) -> np.ndarray:
+        if self.video_size == self.render_size:
+            return self.render("front")
+        if self._video_renderer is None:
+            self._video_renderer = mujoco.Renderer(self.model, *self.video_size)
+        self._video_renderer.update_scene(self.data, camera="front")
+        return self._video_renderer.render()
+
     def close(self) -> None:
+        if self._video_renderer is not None:
+            self._video_renderer.close()
+            self._video_renderer = None
         if self._renderer is not None:
             self._renderer.close()
             self._renderer = None
