@@ -1,0 +1,440 @@
+{
+ "cells": [
+  {
+   "method": "always_skill",
+   "split": "nominal",
+   "task": "place",
+   "successes": 47,
+   "n": 100,
+   "mean_sim_s": 9.194799999999919
+  },
+  {
+   "method": "always_learned",
+   "split": "nominal",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.416200000000492
+  },
+  {
+   "method": "validity_only",
+   "split": "nominal",
+   "task": "place",
+   "successes": 58,
+   "n": 100,
+   "mean_sim_s": 9.73120000000005
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "nominal",
+   "task": "place",
+   "successes": 83,
+   "n": 100,
+   "mean_sim_s": 10.942800000000343
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "nominal",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.416200000000492
+  },
+  {
+   "method": "oracle",
+   "split": "nominal",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.342400000000447
+  },
+  {
+   "method": "always_skill",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 38,
+   "n": 100,
+   "mean_sim_s": 9.046199999999864
+  },
+  {
+   "method": "always_learned",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 90,
+   "n": 100,
+   "mean_sim_s": 10.984200000000358
+  },
+  {
+   "method": "validity_only",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 51,
+   "n": 100,
+   "mean_sim_s": 9.624600000000012
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 69,
+   "n": 100,
+   "mean_sim_s": 10.515000000000223
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 90,
+   "n": 100,
+   "mean_sim_s": 10.984200000000358
+  },
+  {
+   "method": "oracle",
+   "split": "nominal",
+   "task": "stack",
+   "successes": 81,
+   "n": 100,
+   "mean_sim_s": 10.858600000000317
+  },
+  {
+   "method": "always_skill",
+   "split": "pose",
+   "task": "place",
+   "successes": 52,
+   "n": 100,
+   "mean_sim_s": 9.274999999999997
+  },
+  {
+   "method": "always_learned",
+   "split": "pose",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.450200000000555
+  },
+  {
+   "method": "validity_only",
+   "split": "pose",
+   "task": "place",
+   "successes": 69,
+   "n": 100,
+   "mean_sim_s": 10.136000000000212
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "pose",
+   "task": "place",
+   "successes": 83,
+   "n": 100,
+   "mean_sim_s": 10.860000000000381
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "pose",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.450200000000555
+  },
+  {
+   "method": "oracle",
+   "split": "pose",
+   "task": "place",
+   "successes": 94,
+   "n": 100,
+   "mean_sim_s": 11.280400000000498
+  },
+  {
+   "method": "always_skill",
+   "split": "pose",
+   "task": "stack",
+   "successes": 48,
+   "n": 100,
+   "mean_sim_s": 9.39480000000001
+  },
+  {
+   "method": "always_learned",
+   "split": "pose",
+   "task": "stack",
+   "successes": 93,
+   "n": 100,
+   "mean_sim_s": 11.24680000000048
+  },
+  {
+   "method": "validity_only",
+   "split": "pose",
+   "task": "stack",
+   "successes": 57,
+   "n": 100,
+   "mean_sim_s": 9.83060000000011
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "pose",
+   "task": "stack",
+   "successes": 76,
+   "n": 100,
+   "mean_sim_s": 10.867600000000369
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "pose",
+   "task": "stack",
+   "successes": 93,
+   "n": 100,
+   "mean_sim_s": 11.24680000000048
+  },
+  {
+   "method": "oracle",
+   "split": "pose",
+   "task": "stack",
+   "successes": 85,
+   "n": 100,
+   "mean_sim_s": 11.09320000000043
+  },
+  {
+   "method": "always_skill",
+   "split": "object",
+   "task": "place",
+   "successes": 53,
+   "n": 100,
+   "mean_sim_s": 9.731800000000055
+  },
+  {
+   "method": "always_learned",
+   "split": "object",
+   "task": "place",
+   "successes": 92,
+   "n": 100,
+   "mean_sim_s": 11.631000000000556
+  },
+  {
+   "method": "validity_only",
+   "split": "object",
+   "task": "place",
+   "successes": 63,
+   "n": 100,
+   "mean_sim_s": 10.336000000000213
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "object",
+   "task": "place",
+   "successes": 79,
+   "n": 100,
+   "mean_sim_s": 11.140400000000414
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "object",
+   "task": "place",
+   "successes": 92,
+   "n": 100,
+   "mean_sim_s": 11.631000000000556
+  },
+  {
+   "method": "oracle",
+   "split": "object",
+   "task": "place",
+   "successes": 90,
+   "n": 100,
+   "mean_sim_s": 11.600400000000526
+  },
+  {
+   "method": "always_skill",
+   "split": "object",
+   "task": "stack",
+   "successes": 38,
+   "n": 100,
+   "mean_sim_s": 9.745200000000015
+  },
+  {
+   "method": "always_learned",
+   "split": "object",
+   "task": "stack",
+   "successes": 74,
+   "n": 100,
+   "mean_sim_s": 11.22960000000042
+  },
+  {
+   "method": "validity_only",
+   "split": "object",
+   "task": "stack",
+   "successes": 47,
+   "n": 100,
+   "mean_sim_s": 10.611400000000176
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "object",
+   "task": "stack",
+   "successes": 58,
+   "n": 100,
+   "mean_sim_s": 11.326600000000287
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "object",
+   "task": "stack",
+   "successes": 74,
+   "n": 100,
+   "mean_sim_s": 11.22960000000042
+  },
+  {
+   "method": "oracle",
+   "split": "object",
+   "task": "stack",
+   "successes": 63,
+   "n": 100,
+   "mean_sim_s": 11.536800000000396
+  },
+  {
+   "method": "always_skill",
+   "split": "distractors",
+   "task": "place",
+   "successes": 51,
+   "n": 100,
+   "mean_sim_s": 9.332799999999967
+  },
+  {
+   "method": "always_learned",
+   "split": "distractors",
+   "task": "place",
+   "successes": 96,
+   "n": 100,
+   "mean_sim_s": 11.56120000000054
+  },
+  {
+   "method": "validity_only",
+   "split": "distractors",
+   "task": "place",
+   "successes": 62,
+   "n": 100,
+   "mean_sim_s": 9.8868000000001
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "distractors",
+   "task": "place",
+   "successes": 89,
+   "n": 100,
+   "mean_sim_s": 11.171600000000424
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "distractors",
+   "task": "place",
+   "successes": 96,
+   "n": 100,
+   "mean_sim_s": 11.56120000000054
+  },
+  {
+   "method": "oracle",
+   "split": "distractors",
+   "task": "place",
+   "successes": 97,
+   "n": 100,
+   "mean_sim_s": 11.4546000000005
+  },
+  {
+   "method": "always_skill",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 46,
+   "n": 100,
+   "mean_sim_s": 9.095799999999894
+  },
+  {
+   "method": "always_learned",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 95,
+   "n": 100,
+   "mean_sim_s": 11.1332000000004
+  },
+  {
+   "method": "validity_only",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 59,
+   "n": 100,
+   "mean_sim_s": 9.672800000000025
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 83,
+   "n": 100,
+   "mean_sim_s": 10.751200000000281
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 95,
+   "n": 100,
+   "mean_sim_s": 11.1332000000004
+  },
+  {
+   "method": "oracle",
+   "split": "distractors",
+   "task": "stack",
+   "successes": 91,
+   "n": 100,
+   "mean_sim_s": 11.013000000000357
+  },
+  {
+   "method": "always_skill",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 37,
+   "n": 100,
+   "mean_sim_s": 19.140199999997222
+  },
+  {
+   "method": "always_learned",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 81,
+   "n": 100,
+   "mean_sim_s": 29.94859999999559
+  },
+  {
+   "method": "validity_only",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 48,
+   "n": 100,
+   "mean_sim_s": 21.953399999996677
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 66,
+   "n": 100,
+   "mean_sim_s": 26.922199999996042
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 81,
+   "n": 100,
+   "mean_sim_s": 29.94859999999559
+  },
+  {
+   "method": "oracle",
+   "split": "heldout_task",
+   "task": "sort",
+   "successes": 81,
+   "n": 100,
+   "mean_sim_s": 29.63299999999513
+  }
+ ],
+ "sources": [
+  "20261124-232414_eval",
+  "20261125-144808_eval"
+ ]
+}

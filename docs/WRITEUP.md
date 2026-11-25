@@ -142,21 +142,65 @@ band that admits every object variant). The instruction split does not apply: th
 are fixed and never read the instruction.
 
 <!-- table: eval_arbiter -->
+| method | nominal | pose | object | distractors | heldout_task |
+|---|---|---|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.50 [0.43, 0.57] (100/200) | 0.46 [0.39, 0.52] (91/200) | 0.48 [0.42, 0.55] (97/200) | 0.37 [0.28, 0.47] (37/100) |
+| always_learned | 0.92 [0.87, 0.95] (184/200) | 0.94 [0.89, 0.96] (187/200) | 0.83 [0.77, 0.88] (166/200) | 0.95 [0.92, 0.98] (191/200) | 0.81 [0.72, 0.87] (81/100) |
+| validity_only | 0.55 [0.48, 0.61] (109/200) | 0.63 [0.56, 0.69] (126/200) | 0.55 [0.48, 0.62] (110/200) | 0.60 [0.54, 0.67] (121/200) | 0.48 [0.38, 0.58] (48/100) |
+| fallback_on_failure | 0.76 [0.70, 0.81] (152/200) | 0.80 [0.73, 0.85] (159/200) | 0.69 [0.62, 0.75] (137/200) | 0.86 [0.81, 0.90] (172/200) | 0.66 [0.56, 0.75] (66/100) |
+| learned_arbiter | 0.92 [0.87, 0.95] (184/200) | 0.94 [0.89, 0.96] (187/200) | 0.83 [0.77, 0.88] (166/200) | 0.95 [0.92, 0.98] (191/200) | 0.81 [0.72, 0.87] (81/100) |
+| oracle | 0.88 [0.82, 0.91] (175/200) | 0.90 [0.84, 0.93] (179/200) | 0.77 [0.70, 0.82] (153/200) | 0.94 [0.90, 0.97] (188/200) | 0.81 [0.72, 0.87] (81/100) |
 <!-- /table -->
 
+What the table shows:
+- Gating by the scripted skill's own pre-check (validity_only) closes only a minority of the
+  gap between the scripted and the learned grasp: most failed scripted grasps pass the
+  pre-check and fail afterwards, where a pre-check cannot see them.
+- Falling back to the learned policy after a failed grasp helps, but less than choosing it
+  up front, likely because a failed close leaves the object pushed or tilted.
+- The learned arbiter's row equals always_learned on every split. On its own paired training
+  states it predicts higher success for the learned grasp in all of them, and the data say
+  why: the learned grasp re-centers the hand before closing, and from a centered start its
+  first action is the same close the scripted skill performs. In the paired data there is no
+  state where only the scripted close succeeded. The learned executor weakly dominates, so
+  the arbiter learns to defer to it; it adds nothing over a fixed always-learned rule here.
+- The per-node oracle falls below always_learned on most splits: it keeps the scripted grasp
+  whenever that grasp passes its post-check, and some of those grasps slip later.
+
 Learned arbiter vs validity-only on the object split:
-<!-- rate: eval_arbiter learned_arbiter object -->
-<!-- /rate --> vs <!-- rate: eval_arbiter validity_only object -->
-<!-- /rate -->.
+<!-- rate: eval_arbiter learned_arbiter object -->0.83 [0.77, 0.88] (166/200)<!-- /rate --> vs <!-- rate: eval_arbiter validity_only object -->0.55 [0.48, 0.62] (110/200)<!-- /rate -->.
 
 **Executor-quality sweep.** The same policies with the learned grasp cloned from 25 and 100
 demonstrations (arbiter refit for each), on the nominal and object splits.
 
 <!-- table: eval_arbiter_bc25 -->
+| method | nominal | object |
+|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.46 [0.39, 0.52] (91/200) |
+| always_learned | 0.87 [0.82, 0.91] (174/200) | 0.80 [0.73, 0.85] (159/200) |
+| validity_only | 0.54 [0.47, 0.60] (107/200) | 0.52 [0.45, 0.59] (104/200) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (127/200) | 0.61 [0.54, 0.67] (122/200) |
+| learned_arbiter | 0.87 [0.82, 0.91] (174/200) | 0.80 [0.73, 0.85] (159/200) |
+| oracle | 0.83 [0.77, 0.88] (166/200) | 0.74 [0.68, 0.80] (148/200) |
 <!-- /table -->
 
 <!-- table: eval_arbiter_bc100 -->
+| method | nominal | object |
+|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.46 [0.39, 0.52] (91/200) |
+| always_learned | 0.91 [0.86, 0.94] (182/200) | 0.83 [0.77, 0.88] (166/200) |
+| validity_only | 0.54 [0.47, 0.61] (108/200) | 0.56 [0.49, 0.62] (111/200) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (128/200) | 0.66 [0.59, 0.72] (132/200) |
+| learned_arbiter | 0.91 [0.86, 0.94] (182/200) | 0.83 [0.77, 0.88] (166/200) |
+| oracle | 0.87 [0.82, 0.91] (174/200) | 0.77 [0.71, 0.82] (154/200) |
 <!-- /table -->
+
+With fewer demonstrations the learned grasp is weaker, but from the same state it still
+never fails where the scripted close succeeds, and the refit arbiters again pick it in all or
+nearly all paired states. Per-node arbitration pays off when the executors fail in different
+situations. A learned executor that reduces to the scripted action whenever the scripted
+assumptions hold does not create such situations; a learned policy with its own failure modes
+(for example one that must detect the object from a wrist image) would be the test case.
 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 

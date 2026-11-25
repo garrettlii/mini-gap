@@ -75,6 +75,8 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
     """Refill every marked table/rate block from results/<label>.json."""
     def fill(m: re.Match) -> str:
         kind, spec = m.group(1), m.group(2).split()
+        if not (results_dir / f"{spec[0]}.json").exists():   # not published yet: leave as is
+            return m.group(0)
         cells = load_cells([str(results_dir / f"{spec[0]}.json")])
         if kind == "rate":
             return f"<!-- rate: {m.group(2)} -->{_rate(cells, *spec[1:])}<!-- /rate -->"
