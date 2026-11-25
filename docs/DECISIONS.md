@@ -90,3 +90,23 @@ splits) before making it. Format: date, decision, why, what it affects.
   diagonal_grasp, grasp_too_deep, tight_verify, no_release. Each breaks place, stack, and
   sort (0/12 dev seeds each). scripts/run_loop.py optimizes on one block of rehearsal seeds
   and reports a disjoint block (offset 40,000) as held-out.
+
+## 2026-11-24: Phase 6 data and training
+- Failure reports for grasp failures add a measured line: the hand's yaw against the nearest
+  cube's faces and the fingertip offset from the cube center at the failing node. Why: the
+  error alone ("finger width 0.052 m outside [0.03, 0.045]") gave no route to yaw_offset.
+- The specialist prompt lists each param's doc string for its node's skill (catalog_entry
+  itself is unchanged, so planner prompts stay the same length).
+- The loop skips an edit already tried on that node instead of rehearsing it again.
+- The critic prompt shows the exact JSON form of each structural op (it was inventing keys).
+- Teacher: zero-shot, the 2B proposed no fixing edit on any seeded bug; the 4B fixed
+  diagonal_grasp and tight_verify when asked about the culprit node. SFT data therefore comes
+  from loop runs with the 4B as specialist (scripts/gen_repairs.py), on random parameter bugs
+  (seeded_bugs.random_bug: same families, other magnitudes, any matching node) on place and
+  stack. The fixed BUGS stay the evaluation benchmark; sort stays held out.
+- GRPO reward seeds: rehearsal block at offset 20,000 (loop: 0; held-out: 40,000). Cycle-time
+  penalty compares successful episodes only. Problems the unedited graph already solves on all
+  reward seeds are dropped.
+- scripts/train_repair.py wraps mlx-lm-lora. GRPO prompts are rendered with
+  enable_thinking=False through a tokenizer proxy, since mlx-lm-lora's GRPO dataset uses the
+  template default (thinking on). SFT chat examples already render the no-thinking form.

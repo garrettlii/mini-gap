@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from gap.sim.motion import heading
 from gap.types import EpisodeResult
 
 CATEGORIES = ("ik_unreachable", "missed_pose", "grasp_slip", "collision", "timeout",
@@ -31,6 +32,7 @@ class NodeFailure:
     categories: dict[str, int]
     patterns: list[str] = field(default_factory=list)   # human-readable numeric patterns
     examples: list[str] = field(default_factory=list)   # distinct error messages, most common first
+    measured: list[str] = field(default_factory=list)   # geometry at the failing node
 
 
 @dataclass
@@ -57,6 +59,7 @@ def _section(f: NodeFailure) -> list[str]:
         head = f"Node {f.node_id!r} failed in {f.count} of {f.total} runs ({cats})."
     out = [head]
     out += [f"  error: {e}" for e in f.examples]
+    out += [f"  measured: {m}" for m in f.measured]
     out += [f"  pattern: {p}" for p in f.patterns]
     return out
 
@@ -125,6 +128,31 @@ def find_patterns(results: list[EpisodeResult], node_id: str, n_bins: int = 3,
     return [text for _, text in sorted(found, reverse=True)[:top]]
 
 
+def grasp_geometry(results: list[EpisodeResult], node_id: str) -> list[str]:
+    """How the hand met the nearest cube when node_id failed: its yaw against the cube's faces
+    and its offset from the cube's center, averaged over the failures."""
+    angles, offsets, heights = [], [], []
+    for r in results:
+        entry = next((t for t in r.trace if t.node_id == node_id and t.error), None)
+        state = entry.state_before if entry else {}
+        if not state.get("objects"):
+            continue
+        tcp = state["tcp"]
+        cube = min(state["objects"].values(),
+                   key=lambda c: np.hypot(c.pos[0] - tcp.pos[0], c.pos[1] - tcp.pos[1]))
+        d = heading(tcp.quat) - heading(cube.quat)
+        angles.append(abs(np.degrees((d + np.pi / 4) % (np.pi / 2) - np.pi / 4)))
+        offsets.append(np.hypot(cube.pos[0] - tcp.pos[0], cube.pos[1] - tcp.pos[1]))
+        heights.append(tcp.pos[2] - cube.pos[2])
+    if not angles:
+        return []
+    text = (f"the hand was {np.mean(angles):.0f} deg off square to the nearest cube's faces "
+            f"(0 = fingers flat on two faces); fingertip center {1000 * np.mean(offsets):.0f} mm "
+            f"sideways and {1000 * np.mean(heights):+.0f} mm vertically from the cube's center "
+            "(averages over these failures)")
+    return [text]
+
+
 def _blamed(result: EpisodeResult) -> str | None:
     if result.success:
         return None
@@ -143,8 +171,9 @@ def diagnose(results: list[EpisodeResult]) -> FailureReport:
         cats = Counter("other" if node == END else categorize(r, node) for r in rs)
         errors = Counter(next((t.error for t in r.trace if t.node_id == node and t.error), "")
                          for r in rs if node != END)
+        measured = grasp_geometry(rs, node) if cats.most_common(1)[0][0] == "grasp_slip" else []
         blamed.append(NodeFailure(node, len(rs), n, dict(cats), find_patterns(results, node),
-                                  [e for e, _ in errors.most_common(2) if e]))
+                                  [e for e, _ in errors.most_common(2) if e], measured))
     blamed.sort(key=lambda f: -f.count)
     return FailureReport(n, sum(r.success for r in results), blamed)
 

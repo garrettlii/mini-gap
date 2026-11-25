@@ -1,0 +1,15 @@
+# SFT of the 2B repair model on accepted teacher edits (scripts/train_repair.py sft).
+train_type: lora
+num_layers: 16
+lora_parameters: {rank: 8, dropout: 0.0, scale: 10.0}
+batch_size: 4
+iters: 300
+learning_rate: 1.0e-4
+mask_prompt: true
+max_seq_length: 2048
+steps_per_report: 10
+steps_per_eval: 50
+val_batches: -1
+save_every: 100
+fuse: false
+seed: 0

@@ -59,7 +59,8 @@ def build_messages(graph: Graph, node_id: str, node_report: str) -> tuple[str, l
     skill = registry.get(node.skill)
     swaps = [s.name for s in registry.all_skills().values()
              if s.name != skill.name and s.inputs == skill.inputs and s.outputs == skill.outputs]
-    entry = skill.catalog_entry() + (
+    docs = "".join(f"\n    {k}: {prm.doc}" for k, prm in skill.params.items() if prm.doc)
+    entry = skill.catalog_entry() + docs + (
         f"\nSkills with the same ports (valid for swap_skill): {', '.join(swaps)}" if swaps
         else "\nNo other skill has the same ports, so use set_param.")
     system = fill(PROMPT, node_json=node.model_dump_json(by_alias=True, exclude_defaults=True),

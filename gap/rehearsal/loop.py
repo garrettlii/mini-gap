@@ -100,11 +100,15 @@ def _proposals(graph: Graph, report: FailureReport, specialist: Specialist, crit
                 edit = specialist(graph, node, seen)
                 if edit is None:
                     break
-                yield edit, node, seen
+                if _describe(edit) in tried.get(node, []):   # a repeat: don't rehearse it again
+                    continue
                 tried.setdefault(node, []).append(_describe(edit))
+                yield edit, node, seen
     text = report.to_text()
     for edit in critic(graph, text):
-        yield edit, END, text
+        if _describe(edit) not in tried.setdefault(END, []):
+            tried[END].append(_describe(edit))
+            yield edit, END, text
 
 
 def suspects(graph: Graph, node_id: str, category: str, limit: int = 4) -> list[str]:

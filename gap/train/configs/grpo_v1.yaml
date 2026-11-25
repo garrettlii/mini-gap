@@ -1,0 +1,18 @@
+# GRPO of the 2B repair model with the simulator reward (scripts/train_repair.py grpo).
+train_type: lora
+num_layers: 16
+lora_parameters: {rank: 8, dropout: 0.0, scale: 10.0}
+batch_size: 2
+group_size: 4
+iters: 100
+learning_rate: 5.0e-6
+beta: 0.05
+temperature: 0.8
+max_completion_length: 160
+max_seq_length: 2048
+steps_per_report: 5
+steps_per_eval: 50
+val_batches: 4
+save_every: 25
+fuse: false
+seed: 0

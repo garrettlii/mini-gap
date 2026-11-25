@@ -39,11 +39,14 @@ def main() -> None:
     ap.add_argument("--iters", type=int, default=8)
     ap.add_argument("--seed-offset", type=int, default=0)
     ap.add_argument("--adapter", default=None, help="LoRA adapter for the specialist (Phase 6)")
+    ap.add_argument("--specialist", default="mlx_repo", choices=["mlx_repo", "planner_repo"],
+                    help="configs/models.yaml key: the 2B repair model or the 4B planner model")
     args = ap.parse_args()
 
     cfg = LoopConfig(args.task, n_instances=args.n, max_iters=args.iters,
                      seed_offset=args.seed_offset)
-    run = RunDir(f"loop_{args.task}_{args.bug or args.start}", {**vars(args), "loop": vars(cfg)})
+    name = f"loop_{args.task}_{args.bug or args.start}_{args.specialist.split('_')[0]}"
+    run = RunDir(name, {**vars(args), "loop": vars(cfg)})
     if args.start == "planner":
         instruction = task_config()["tasks"][args.task]["instructions"][0]
         graph, log = plan(local_llm(run, "planner", model="planner_repo"), instruction)
@@ -53,7 +56,7 @@ def main() -> None:
             return
     else:
         graph = buggy_graph(args.task, args.bug)
-    specialist = functools.partial(propose_fix, local_llm(run, "specialist",
+    specialist = functools.partial(propose_fix, local_llm(run, "specialist", model=args.specialist,
                                                           adapter_path=args.adapter))
     critic = functools.partial(propose_structure, local_llm(run, "critic", model="planner_repo"))
     final = improve(graph, cfg, specialist, critic, run)
