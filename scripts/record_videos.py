@@ -1,10 +1,12 @@
 """Record the three demo clips on dev seeds and join them into one captioned video.
 
   uv run python scripts/record_videos.py --models runs/<train_arbiter> --repaired runs/<loop run>
+  uv run python scripts/record_videos.py --models runs/<train_arbiter> --repaired runs/<gen_repairs>#2
 
 1. success: the stack graph with the learned arbiter, camera noise on
-2. recovered failure: a seeded-bug graph fails; the loop's repaired graph (final_graph.json,
-   which was rehearsed with the clean sensor) succeeds on the same seed
+2. recovered failure: a seeded-bug graph fails; the loop's repaired graph succeeds on the same
+   seed (a run_loop dir's final_graph.json, or problem #i of a gen_repairs run; both were
+   rehearsed with the clean sensor)
 3. arbiter switching: sort on the object split; the caption names the executor at each node
 Each clip uses the first dev seed (from 50,000) whose episode shows what the clip is about.
 """
@@ -21,12 +23,13 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from gap.arbiter.policies import arbiter_graph, executors
+from gap.graph.edits import SetParam, apply_edit
 from gap.graph.interpreter import run_graph
 from gap.graph.schema import Graph
-from gap.rehearsal.seeded_bugs import buggy_graph
+from gap.rehearsal.seeded_bugs import buggy_graph, reference_graph
 from gap.sim.task_sampler import sample
 from gap.sim.workcell import VIDEO_FPS, Workcell
-from gap.utils.runs import RunDir
+from gap.utils.runs import RunDir, read_jsonl
 from gap.utils.seeds import seed_range
 from gap.utils.video import save_mp4
 
@@ -72,6 +75,21 @@ def captioned(cell, graph, inst, title, **kw) -> tuple[list, dict]:
     return out, info
 
 
+def repair_case(spec: str) -> tuple[str, Graph, Graph, str]:
+    """(task, buggy graph, repaired graph, bug label) from "<run_loop dir>" or
+    "<gen_repairs dir>#<problem index>" (problems.jsonl and loop_summary.jsonl align)."""
+    if "#" not in spec:
+        cfg = json.loads(Path(spec, "config.json").read_text())
+        final = Graph.model_validate_json(Path(spec, "final_graph.json").read_text())
+        return cfg["task"], buggy_graph(cfg["task"], cfg["bug"]), final, cfg["bug"]
+    run, idx = spec.split("#")
+    prob = read_jsonl(Path(run, "problems.jsonl"))[int(idx)]
+    final = Graph.model_validate_json(read_jsonl(Path(run, "loop_summary.jsonl"))[int(idx)]["final_graph"])
+    bug = SetParam(**prob["bug"])
+    return (prob["task"], apply_edit(reference_graph(prob["task"]), bug), final,
+            f"{bug.node}.{bug.param}={bug.value}")
+
+
 def _draw(frame: np.ndarray, title: str, sub: str) -> np.ndarray:
     img = Image.fromarray(frame)
     d = ImageDraw.Draw(img)
@@ -88,9 +106,7 @@ def main() -> None:
     ap.add_argument("--models", required=True, help="train_arbiter run dir")
     ap.add_argument("--repaired", required=True, help="run_loop run dir (final_graph.json)")
     args = ap.parse_args()
-    loop_cfg = json.loads(Path(args.repaired, "config.json").read_text())
-    task, bug = loop_cfg["task"], loop_cfg["bug"]
-    repaired = Graph.model_validate_json(Path(args.repaired, "final_graph.json").read_text())
+    task, buggy, repaired, bug = repair_case(args.repaired)
     run = RunDir("videos", vars(args))
     noisy, clean = Workcell(camera_noise=True, video_size=(480, 640)), Workcell(video_size=(480, 640))
     arb = {"policy": "learned_arbiter", "models": args.models}
@@ -104,9 +120,9 @@ def main() -> None:
     infos.append(i)
 
     def fixed_only(r, m):
-        return r.success and not episode(clean, buggy_graph(task, bug), sample(task, r.instance.seed))[0].success
+        return r.success and not episode(clean, buggy, sample(task, r.instance.seed))[0].success
     seed = find_seed(clean, lambda: repaired, task, "nominal", fixed_only)
-    for graph, title in ((buggy_graph(task, bug), f"2/3 {task}, seeded bug: {bug}"),
+    for graph, title in ((buggy, f"2/3 {task}, seeded bug: {bug}"),
                          (repaired, f"2/3 {task}, after the repair loop")):
         c, i = captioned(clean, graph, sample(task, seed), title)
         clips.append(c)
