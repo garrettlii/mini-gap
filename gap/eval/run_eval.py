@@ -33,6 +33,7 @@ from gap.eval.splits import SPLITS
 from gap.graph.schema import Graph
 from gap.rehearsal.runner import map_jobs, rehearse, with_rgbd
 from gap.sim.task_sampler import sample
+from gap.types import EpisodeResult
 from gap.utils.runs import RunDir
 from gap.utils.seeds import eval_seeds, seed_range
 
@@ -85,7 +86,10 @@ def _run_method(method, task, insts, noise, args, run):
         return _rehearse(arbiter_graph(task), insts, noise, (base, args.models))
     policy = (arb, args.models) if arb else None
     if base == "graph_loop":
-        return _rehearse(_loop_graph(args.loop_runs, task), insts, noise, policy)
+        graph = _loop_graph(args.loop_runs, task)
+        if graph is None:   # the planner never produced a valid graph for this task
+            return [EpisodeResult(i, False, [], 0.0, "no_policy") for i in insts]
+        return _rehearse(graph, insts, noise, policy)
     if base not in LLM_METHODS:
         raise SystemExit(f"unknown method {method!r}")
     results = [None] * len(insts)
@@ -113,10 +117,11 @@ def _rehearse(graph: Graph, insts, noise: bool, policy=None):
                     policy=policy)
 
 
-def _loop_graph(run_dirs: list[str], task: str) -> Graph:
+def _loop_graph(run_dirs: list[str], task: str) -> Graph | None:
     for d in run_dirs:
         if json.loads(Path(d, "config.json").read_text())["task"] == task:
-            return Graph.model_validate_json(Path(d, "final_graph.json").read_text())
+            final = Path(d, "final_graph.json")
+            return Graph.model_validate_json(final.read_text()) if final.exists() else None
     raise SystemExit(f"no --loop-runs dir for task {task!r}")
 
 
@@ -142,7 +147,6 @@ def _llm_policy(method: str, task: str, instruction: str, args, run) -> dict:
 def _code_job(job):
     from gap.graph.code_exec import run_code
     from gap.rehearsal.runner import worker_cell
-    from gap.types import EpisodeResult
     code, inst, noise = job
     cell = worker_cell(noise)
     if not code:
