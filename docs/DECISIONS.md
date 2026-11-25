@@ -201,3 +201,6 @@ splits) before making it. Format: date, decision, why, what it affects.
   four layers linear attention, which trains slowly in MLX). sft_v2 and grpo_v1 now process one
   prompt at a time with gradient accumulation (same effective batch) and gradient
   checkpointing; SFT peak memory fell from 12 GB to 3.5 GB at about 15 s per update.
+- macOS also aborted a training step with "Impacting Interactivity" (a GPU command buffer ran
+  too long). train_repair.py sets MLX_MAX_OPS_PER_BUFFER and MLX_MAX_MB_PER_BUFFER to 8 so
+  MLX submits shorter buffers; speed unchanged.

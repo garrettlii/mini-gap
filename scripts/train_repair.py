@@ -16,7 +16,13 @@ from __future__ import annotations
 
 import argparse
 import functools
+import os
 import sys
+
+# Short Metal command buffers, set before MLX touches the GPU: macOS kills long-running ones
+# ("Impacting Interactivity") partway through training on this Mac.
+os.environ.setdefault("MLX_MAX_OPS_PER_BUFFER", "8")
+os.environ.setdefault("MLX_MAX_MB_PER_BUFFER", "8")
 from importlib.metadata import version
 from pathlib import Path
 
