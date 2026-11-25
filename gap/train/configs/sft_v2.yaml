@@ -1,8 +1,11 @@
-# SFT v2: v1 with fewer iterations for the 48-example dataset (scripts/train_repair.py sft).
+# SFT v2: v1 with fewer iterations for the 48-example dataset, and batch 1 x 4 accumulation with
+# gradient checkpointing (batch 4 ran out of memory on 16 GB) (scripts/train_repair.py sft).
 train_type: lora
 num_layers: 16
 lora_parameters: {rank: 8, dropout: 0.0, scale: 10.0}
-batch_size: 4
+batch_size: 1
+gradient_accumulation_steps: 4   # same effective batch as v1
+grad_checkpoint: true
 iters: 120                 # ~10 epochs over the 48 training examples
 learning_rate: 1.0e-4
 mask_prompt: true
