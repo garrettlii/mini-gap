@@ -2,6 +2,26 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 4: Phases 5-6 code, Phase 6b arbiter, Phase 7 tooling
+- Works: `uv run pytest --phase 7` 78+ passed (executor semantics, arbiter, object split,
+  camera noise, run_eval, report rendering). Repair loop with routed specialist/critic;
+  teacher repair data in runs/20261124-200353_gen_repairs and runs/20261124-224356_gen_repairs
+  (330+ edit records, 48 train / 5 valid SFT examples). Learned grasp (600 demos) and arbiter in
+  runs/20261124-230951_train_arbiter; dev comparison of the six policies in
+  runs/20261124-231427_eval; eval-seed arbiter run (nominal + pose done) in
+  runs/20261124-232414_eval.
+- Finding: the learned grasp weakly dominates the scripted close (in the paired data no state
+  has only the skill succeeding, even with 25 demos), so the learned arbiter ties
+  always_learned. Logged before the executor-quality sweep (DECISIONS 2026-11-24).
+- Decisions: DECISIONS entries for Phase 6b setup, executor-quality sweep, RGB-D perception
+  at evaluation, loop under deployment conditions, Phase 6 training on the data at hand.
+- Next: the queued GPU chain (SFT v2, GRPO, eval_repair, deployed-condition planner loops,
+  methods eval, seeded-bug benchmark loops) and CPU chain (remaining arbiter splits, sweep);
+  then publish results/, render README and WRITEUP, record videos.
+- Open: report prints widths to 3 decimals (blocks high_verify_min repairs); per-node oracle
+  is not an episode upper bound; long runs must survive session ends (queues now detached
+  with done markers under runs/_queue).
+
 ## Session 3: Phases 1-3 done, Phase 4 harness built
 - Works: `uv run pytest --phase 4 --runslow` covers phases 0-4. Oracle place 100/100 dev seeds;
   place graph 100/100 (within 2 pts of the oracle). Example graphs on 50 dev seeds: place 50/50,
