@@ -203,6 +203,6 @@ uv run python scripts/train_arbiter.py --demos 600 --paired 200
 uv run python -m gap.eval.run_eval --models runs/<train_arbiter> \
     --methods always_skill always_learned validity_only fallback_on_failure learned_arbiter oracle \
     --splits nominal pose object distractors heldout_task
-uv run python -m gap.eval.report --publish runs/<eval> eval_arbiter
+uv run python -m gap.eval.report --publish eval_arbiter runs/<eval>
 uv run python -m gap.eval.report --render README.md docs/WRITEUP.md
 ```

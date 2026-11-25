@@ -186,3 +186,14 @@ splits) before making it. Format: date, decision, why, what it affects.
   noise on in the loop and the held-out check). The graph_loop rows in the evaluation come
   from planner graphs repaired this way; the Phase 5 seeded-bug benchmark keeps the clean
   sensor. rehearsal.runner.with_rgbd is the one place the locator swap lives.
+
+## 2026-11-25: Phase 6 training on the data at hand
+- The teacher data run stopped after all place problems and a few stack problems; with the
+  first run that gives 48 training and 5 validation SFT examples (deduplicated). That is
+  enough for a LoRA on ~40-token JSON edits, so the run was not resumed.
+- sft_v2.yaml: sft_v1 with 120 iterations instead of 300 (about 10 epochs instead of 25 at
+  batch 4) to limit overfitting on 48 examples; validation every 20 steps.
+- Known teacher gap: it never fixes high_verify_min bugs. It picks the right parameter
+  (width_min) but sets it to the grasp width as printed in the report (3 decimals), which
+  is just above the true width, so the fix fails. SFT cannot learn that family; GRPO's
+  sampling can. The report precision is left unchanged so SFT prompts match the data.

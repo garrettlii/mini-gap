@@ -5,7 +5,7 @@ Never hand-edit numbers into README or the write-up: regenerate them from here.
 
   uv run python -m gap.eval.report runs/*/metrics.json            # methods x splits
   uv run python -m gap.eval.report runs/*/metrics.json --by task  # methods x tasks
-  uv run python -m gap.eval.report --publish runs/<run> <label>    # -> results/<label>.json
+  uv run python -m gap.eval.report --publish <label> runs/<run>... # -> results/<label>.json
   uv run python -m gap.eval.report --render README.md docs/WRITEUP.md
 
 --render refills marked blocks in place from results/<label>.json (tracked in git):
@@ -18,7 +18,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import shutil
 from collections import defaultdict
 from pathlib import Path
 
@@ -86,11 +85,14 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
     return BLOCK.sub(fill, text)
 
 
-def publish(run_dir: str, label: str, results_dir: Path = RESULTS) -> Path:
-    """Copy a run's metrics.json into the tracked results folder under a stable label."""
+def publish(label: str, run_dirs: list[str], results_dir: Path = RESULTS) -> Path:
+    """Merge the runs' cells into the tracked results folder under a stable label (several
+    runs when an evaluation was resumed in parts)."""
     results_dir.mkdir(exist_ok=True)
     out = results_dir / f"{label}.json"
-    shutil.copy(Path(run_dir) / "metrics.json", out)
+    cells = load_cells([str(Path(d) / "metrics.json") for d in run_dirs])
+    out.write_text(json.dumps({"cells": cells, "sources": [Path(d).name for d in run_dirs]},
+                              indent=1))
     return out
 
 
@@ -112,11 +114,11 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("metrics", nargs="*")
     ap.add_argument("--by", choices=["split", "task"], default="split")
-    ap.add_argument("--publish", nargs=2, metavar=("RUN_DIR", "LABEL"))
+    ap.add_argument("--publish", nargs="+", metavar="LABEL RUN_DIR")
     ap.add_argument("--render", nargs="+", metavar="FILE")
     args = ap.parse_args()
     if args.publish:
-        print(publish(*args.publish))
+        print(publish(args.publish[0], args.publish[1:]))
     for path in args.render or []:
         Path(path).write_text(render(Path(path).read_text()))
         print("rendered", path)

@@ -71,6 +71,6 @@ uv run python scripts/eval_repair.py --adapters sft=runs/<sft>/adapter grpo=runs
 uv run python scripts/run_loop.py --task place --start planner --specialist planner_repo --camera-noise
 uv run python -m gap.eval.run_eval --models runs/<train_arbiter> --loop-runs runs/<loops...> \
     --methods code graph_single graph_multi graph_loop graph_loop+learned_arbiter
-uv run python -m gap.eval.report --publish runs/<eval> eval_methods
+uv run python -m gap.eval.report --publish eval_methods runs/<eval>
 uv run python -m gap.eval.report --render README.md docs/WRITEUP.md
 ```

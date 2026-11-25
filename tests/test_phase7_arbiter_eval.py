@@ -122,3 +122,15 @@ def test_eval_swaps_out_the_ground_truth_locator(monkeypatch):
     run_eval._rehearse(reference_graph("place"), [], True)
     skills = {n.skill for n in seen["graph"].nodes}
     assert "locate_object_rgbd" in skills and "locate_object_gt" not in skills
+
+
+def test_publish_merges_runs(tmp_path):
+    import json
+
+    from gap.eval.report import load_cells, publish
+    for k in (0, 1):
+        (tmp_path / f"run{k}").mkdir()
+        cell = {"method": "m", "split": f"s{k}", "task": "place", "successes": k, "n": 2}
+        (tmp_path / f"run{k}" / "metrics.json").write_text(json.dumps({"cells": [cell]}))
+    out = publish("lab", [str(tmp_path / "run0"), str(tmp_path / "run1")], tmp_path / "res")
+    assert [c["split"] for c in load_cells([str(out)])] == ["s0", "s1"]
