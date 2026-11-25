@@ -7,13 +7,15 @@ import numpy as np
 from gap.sim import model_builder as mb
 from gap.sim.ik import top_down_quat
 from gap.sim.motion import grasp_quat, heading, move_tcp
-from gap.skills._common import cube_body, reachable, touching
+from gap.skills._common import cube_body, hand_offsets, reachable, touching
 from gap.skills.base import Param, Skill
 from gap.skills.registry import register
 from gap.types import Pose, SkillResult
 
 MAX_WIDTH = 0.08  # meters, fully open
 CUBE_WIDTH_CTRL = mb.GRIPPER_OPEN_CTRL * 2 * mb.CUBE_HALF / MAX_WIDTH
+# A 4 cm cube fits between open fingers with this much off-center room (5 mm margin kept).
+CLOSE_SLACK = MAX_WIDTH / 2 - mb.CUBE_HALF - 0.005
 
 
 @register
@@ -62,6 +64,18 @@ class CloseGripper(Skill):
         "force": Param(0.6, 0.1, 1.0, "fraction of max squeeze; 1.0 = full closing command"),
         "wait_steps": Param(150, 20, 500, "sim steps to wait"),
     }
+
+    def pre(self, cell, inputs, params):
+        """Geometric validity: the nearest object sits between the open fingers (judged for
+        the 4 cm cube this skill assumes)."""
+        off = hand_offsets(cell)["close_axis"]
+        if abs(off) > CLOSE_SLACK:
+            return False, f"object is {off * 100:.1f} cm off center along the closing axis"
+        return True, ""
+
+    def pre_margins(self, cell, inputs, params):
+        off = hand_offsets(cell)
+        return {k: off[k] for k in ("close_axis", "width_axis", "dz", "yaw", "half", "round")}
 
     def run(self, cell, inputs, params) -> SkillResult:
         ctrl = cell.data.ctrl.copy()

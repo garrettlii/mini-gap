@@ -104,7 +104,7 @@ def _rgb_to_hsv(rgb: np.ndarray) -> np.ndarray:
 
 def _mask_to_pose(cell, mask: np.ndarray, depth: np.ndarray) -> Pose:
     """Back-project masked pixels through the overhead pinhole camera; yaw from the outline."""
-    m, d = cell.model, cell.data
+    m = cell.model
     cam = m.camera("overhead").id
     h, w = mask.shape
     f = 0.5 * h / np.tan(np.deg2rad(m.cam_fovy[cam]) / 2)
@@ -112,8 +112,8 @@ def _mask_to_pose(cell, mask: np.ndarray, depth: np.ndarray) -> Pose:
     z = depth[v, u]
     # Camera frame: x right, y up, looking along -z.
     pts_cam = np.stack([(u - w / 2 + 0.5) * z / f, -(v - h / 2 + 0.5) * z / f, -z], -1)
-    R = d.cam_xmat[cam].reshape(3, 3)
-    pts = pts_cam @ R.T + d.cam_xpos[cam]
+    cam_pos, R = cell.calibrated_camera("overhead")   # nominal pose: calibration error stays
+    pts = pts_cam @ R.T + cam_pos
     top = pts[pts[:, 2] > pts[:, 2].max() - 0.01]     # keep the top face only
     center = top.mean(0) - np.array([0, 0, mb.CUBE_HALF])
     yaw = _square_yaw(top[:, :2] - top[:, :2].mean(0))

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import math
 from dataclasses import dataclass, field
 
 
@@ -32,7 +34,20 @@ SPLITS: dict[str, Split] = {
 def apply_split(task_cfg: dict, split: Split) -> dict:
     """Return a modified copy of the task config for this split (used by task_sampler).
 
-    'object' needs extra bodies in the MJCF (or MjSpec edits at build time): plan that in
-    Phase 7, not before.
+    task_cfg is the whole configs/tasks.yaml dict. The sampler reads two extra keys this adds:
+    n_distractors and object_variants (variant geoms built by model_builder._add_variants).
     """
-    raise NotImplementedError
+    cfg = copy.deepcopy(task_cfg)
+    env = cfg["envelope"]
+    for axis in ("x", "y"):
+        lo, hi = env[axis]
+        mid, half = (lo + hi) / 2, (hi - lo) / 2 * split.envelope_scale
+        env[axis] = [mid - half, mid + half]
+    if split.full_yaw:
+        env["yaw"] = [-math.pi, math.pi]
+    if split.paraphrase_instructions:
+        for task in cfg["tasks"].values():
+            task["instructions"] = task["paraphrases"]
+    cfg["n_distractors"] = split.n_distractors
+    cfg["object_variants"] = list(split.object_variants)
+    return cfg

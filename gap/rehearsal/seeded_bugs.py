@@ -55,7 +55,7 @@ FAMILIES = {
 
 def random_bug(task: str, seed: int) -> tuple[str, SetParam]:
     """(family, edit): a random parameter bug on a random node of the reference graph."""
-    rng = random.Random(seed)
+    rng = random.Random(f"{task}:{seed}")   # str seeds hash deterministically
     family = rng.choice(sorted(FAMILIES))
     skill, param, ranges = FAMILIES[family]
     node = rng.choice([n.id for n in reference_graph(task).nodes if n.skill == skill])

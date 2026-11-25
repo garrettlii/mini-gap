@@ -31,14 +31,16 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
     - Cube z = CUBE_HALF (resting on the table). Yaw -> quaternion about world z.
     - Fill instance.features with the variables diagnosis and the arbiter will need:
       per-object x, y, yaw, and distance from the robot base.
-    - split != "nominal": apply the overrides from gap/eval/splits.py (Phase 7). Until then,
-      raise NotImplementedError for other splits rather than silently ignoring them.
+    - split != "nominal": apply the overrides from gap/eval/splits.py. Distractors are the
+      task's unused cubes, placed in the envelope after the used ones (so the used cubes'
+      poses match the same seed without distractors). On the object split every used cube
+      gets a variant (features "<cube>_variant", an index into model_builder.VARIANT_NAMES),
+      drawn after all poses, and rests at that variant's half height.
     """
-    if split != "nominal":
-        raise NotImplementedError("Wait till Phase 7")
+    from gap.eval.splits import SPLITS, apply_split   # plain definitions, no sim imports
 
     rng = np.random.default_rng(seed)
-    cfg = task_config()
+    cfg = task_config() if split == "nominal" else apply_split(task_config(), SPLITS[split])
 
     envelope = cfg["envelope"]
     task_cfg = cfg["tasks"][task]
@@ -57,8 +59,10 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
     object_poses = dict()
     features = dict()
     placed = list()
-    for cube in mb.CUBES:
-        if cube not in used:
+    distractors = [c for c in mb.CUBES if c not in used][: cfg.get("n_distractors", 0)]
+    in_envelope = [c for c in mb.CUBES if c in used] + distractors
+    for cube in in_envelope + [c for c in mb.CUBES if c not in in_envelope]:
+        if cube not in in_envelope:
             x, y = parking[cube]
             object_poses[cube] = Pose((x, y, mb.CUBE_HALF))  # yaw 0: Pose's default quat
         else:
@@ -87,11 +91,19 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
             quat = (float(np.cos(yaw / 2)), 0.0, 0.0, float(np.sin(yaw / 2)))
             object_poses[cube] = Pose((x, y, mb.CUBE_HALF), quat)
 
+    for name in cfg.get("object_variants", []):
+        assert name in mb.VARIANT_NAMES, f"unknown object variant {name!r}"
+    for cube in [c for c in mb.CUBES if c in used] if cfg.get("object_variants") else []:
+        variant = mb.VARIANT_NAMES.index(str(rng.choice(cfg["object_variants"])))
+        p = object_poses[cube]
+        object_poses[cube] = Pose((p.pos[0], p.pos[1], mb.half_height(variant)), p.quat)
+        features[f"{cube}_variant"] = float(variant)
+
     return TaskInstance(
         task = task,
         instruction = instruction,
         seed = seed,
-        object_poses = object_poses,
+        object_poses = {c: object_poses[c] for c in mb.CUBES},
         split = split,
         features = features,
     )

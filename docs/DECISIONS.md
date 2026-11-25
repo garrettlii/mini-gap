@@ -110,3 +110,55 @@ splits) before making it. Format: date, decision, why, what it affects.
 - scripts/train_repair.py wraps mlx-lm-lora. GRPO prompts are rendered with
   enable_thinking=False through a tokenizer proxy, since mlx-lm-lora's GRPO dataset uses the
   template default (thinking on). SFT chat examples already render the no-thinking form.
+
+## 2026-11-24: Phase 6b setup: object variants, camera noise, learned grasp executor
+- Why: with the clean sensor, the scripted graphs passed 238/240 dev episodes on the pose and
+  distractor splits (180/180 with RGB-D perception). A learned executor had nothing to win, so
+  the arbiter result needs failure sources that exist on real robots.
+- Object split (model_builder.py, OWNER: done): each cube body gets three extra geoms
+  (3 cm box, 5 cm box, upright cylinder 4 cm diameter x 4 cm), off by default (contype 2,
+  conaffinity 0, hidden group: nothing collides with them, but they stay in the collision
+  tree; geoms compiled with contype 0 are dropped from it and cannot be switched on later). Workcell.reset turns on the variant named by instance.features
+  "<cube>_variant" (index into model_builder.VARIANTS; 0 = the 4 cm cube). Body mass and
+  inertia stay those of the 4 cm cube (explicit inertial), a stated simplification.
+  The sampler draws a variant for every used cube on the object split and spawns it at its
+  own half height. success.py uses each object's true half height; the skills keep their
+  4 cm assumptions (that is what the split tests).
+- Camera noise (Workcell(camera_noise=True), rehearse(camera_noise=...)): the overhead
+  RGB-D camera gets a per-episode extrinsic calibration error (rotation N(0, 0.5 deg) per
+  axis, translation N(0, 5 mm) per axis, seeded by the instance seed) and Kinect-style depth
+  noise (sigma = 2.85e-3 * z^2 m per pixel). Perception back-projects with the calibrated
+  (nominal) pose. Off by default so the Phase 1-5 tests and runs keep the clean sensor; the
+  Phase 6b and Phase 7 runs turn it on for every method and split, and their configs record it.
+- Learned executor: one per node type, starting with grasp (close_gripper nodes). A
+  closed-loop behavior-cloned MLP (sklearn, 64x64) that sees the nearest object relative to
+  the hand (skills._common.hand_offsets plus 1 mm / 1 deg noise: a privileged stand-in for a
+  wrist camera) and outputs a hand-frame velocity plus a close command; a damped-least-squares
+  Jacobian step turns the velocity into joint targets. Demonstrator: a privileged
+  proportional servo that closes once centered, run from perturbed hand poses (yaw +-0.35 rad,
+  xy +-2 cm, z +-8 mm) with DART-style action noise 0.3 so the clone sees recoveries. Close
+  commands are oversampled x10 (one per demo). The write-up must state the privileged
+  observation.
+- Executor semantics (interpreter): "learned" skips the scripted skill's pre-check (that check
+  encodes the scripted skill's own assumptions) but keeps its post-check, so both executors
+  are judged by the same test. "fallback" runs the skill, then the learned executor from the
+  state the failure left. "oracle" snapshots, runs the skill, and on failure restores and runs
+  the learned executor (an in-sim upper bound, not deployable).
+- CloseGripper.pre now fails when the hand is more than 15 mm off center along the closing
+  axis (the open fingers cannot reach both sides). Before, such closes ran and failed their
+  post-check; the validity_only policy needs the pre-check to see it.
+- Arbiter graphs (arbiter/policies.arbiter_graph): the reference graphs with RGB-D perception
+  and verify_grasp's width band widened to [0.02, 0.055] m, so a 3 or 5 cm variant is not
+  rejected by the band; a grasp failure is then an executor failure.
+- Paired data: at every close_gripper node of an arbiter-graph episode (camera noise on,
+  nominal and object splits alternating) both executors run from the same snapshot; the label
+  is the node's post-check. The episode continues with the skill.
+- Arbiter: one logistic regression per executor on |offsets|, squares, height, yaw, object
+  size and roundness; pick learned when its predicted success is higher. Linear on purpose,
+  so the coefficients say where each executor wins.
+- Rehearsal seed blocks: loop from 0, arbiter paired data 10,000, GRPO rewards 20,000,
+  BC demos 30,000, held-out loop checks 40,000.
+- run_eval --dev runs the same code on dev seeds (1000 per split) for tuning; only the
+  default mode uses eval seeds.
+- seeded_bugs.random_bug seeds its generator with "<task>:<seed>" so place and stack get
+  different bugs for the same seed.

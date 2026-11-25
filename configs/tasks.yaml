@@ -15,16 +15,20 @@ tasks:
   lift:
     objects: [red_cube]
     instructions: ["lift the red cube", "pick up the red block and hold it up"]
+    paraphrases: ["raise the red block off the table", "grab the red cube and lift it"]   # instruction split only
     success: {object: red_cube, min_height: 0.10}
   place:
     objects: [red_cube]
     instructions: ["put the red cube in zone A", "place the red block on the yellow square"]
+    paraphrases: ["move the red block into the yellow area", "drop the red cube off in zone A"]   # instruction split only
     success: {object: red_cube, zone: zone_a, gripper_open: true}
   stack:
     objects: [red_cube, green_cube]
     instructions: ["stack the green cube on the red cube", "put green on top of red"]
+    paraphrases: ["set the green block on top of the red block", "place green onto red to make a tower"]   # instruction split only
     success: {top: green_cube, bottom: red_cube, xy_tol: 0.015}
   sort:                        # held out from Qwen training in Phase 6
     objects: [red_cube, green_cube, blue_cube]
     instructions: ["put red and blue in zone A and green in zone B"]
+    paraphrases: ["red and blue go to the yellow square, green goes to the cyan square"]   # instruction split only
     success: {assign: {red_cube: zone_a, blue_cube: zone_a, green_cube: zone_b}}

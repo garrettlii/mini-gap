@@ -18,7 +18,7 @@ REST_STEPS = 100       # 0.2 s hold for the at-rest check
 REST_TOL = 1e-3        # meters an object may drift during the hold
 
 
-def check(task: str, state: State, task_cfg: dict) -> bool:
+def check(task: str, state: State, task_cfg: dict, half: dict[str, float] | None = None) -> bool:
     """Dispatch to the per-task check using task_cfg['success'] from configs/tasks.yaml.
 
     lift:  object z - CUBE_HALF >= min_height
@@ -29,22 +29,24 @@ def check(task: str, state: State, task_cfg: dict) -> bool:
     Also require objects to be at rest (check velocity, or step a few times and compare);
     a cube sliding through the zone is not a success.
 
-    This is the static part; settled_success() adds the at-rest check.
+    This is the static part; settled_success() adds the at-rest check. half maps object ->
+    its true half height (object split variants); default CUBE_HALF.
     """
     c = task_cfg["success"]
     obj = state["objects"]
+    h = {o: (half or {}).get(o, mb.CUBE_HALF) for o in obj}
     if task == "lift":
-        return obj[c["object"]].pos[2] - mb.CUBE_HALF >= c["min_height"]
+        return obj[c["object"]].pos[2] - h[c["object"]] >= c["min_height"]
     if task == "place":
         opened = state["gripper_width"] >= OPEN_WIDTH or not c.get("gripper_open", False)
-        return _resting_in_zone(obj[c["object"]].pos, c["zone"]) and opened
+        return _resting_in_zone(obj[c["object"]].pos, c["zone"], h[c["object"]]) and opened
     if task == "stack":
         top, bottom = obj[c["top"]].p, obj[c["bottom"]].p
         return (np.linalg.norm(top[:2] - bottom[:2]) <= c["xy_tol"]
-                and abs(top[2] - bottom[2] - 2 * mb.CUBE_HALF) <= Z_TOL
-                and abs(bottom[2] - mb.CUBE_HALF) <= Z_TOL)
+                and abs(top[2] - bottom[2] - h[c["top"]] - h[c["bottom"]]) <= Z_TOL
+                and abs(bottom[2] - h[c["bottom"]]) <= Z_TOL)
     if task == "sort":
-        return all(_resting_in_zone(obj[o].pos, z) for o, z in c["assign"].items())
+        return all(_resting_in_zone(obj[o].pos, z, h[o]) for o, z in c["assign"].items())
     raise ValueError(f"unknown task {task!r}")
 
 
@@ -54,10 +56,12 @@ def settled_success(cell) -> bool:
     before = cell.get_state()["objects"]
     after = cell.step(None, REST_STEPS)
     still = all(np.linalg.norm(after["objects"][k].p - p.p) <= REST_TOL for k, p in before.items())
-    return still and check(task, after, task_config()["tasks"][task])
+    half = {c: mb.half_height(int(cell.instance.features.get(f"{c}_variant", 0)))
+            for c in mb.CUBES}
+    return still and check(task, after, task_config()["tasks"][task], half)
 
 
-def _resting_in_zone(pos, zone: str) -> bool:
+def _resting_in_zone(pos, zone: str, half: float = mb.CUBE_HALF) -> bool:
     z = task_config()["zones"][zone]
     return (abs(pos[0] - z["pos"][0]) <= z["half"] and abs(pos[1] - z["pos"][1]) <= z["half"]
-            and abs(pos[2] - mb.CUBE_HALF) <= Z_TOL)
+            and abs(pos[2] - half) <= Z_TOL)

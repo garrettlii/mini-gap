@@ -31,6 +31,22 @@ CUBE_HALF = 0.02
 
 GRIP_GAIN = 10.0                    # gripper stiffness multiplier over Menagerie's
 
+# Object variants (eval "object" split). Index 0 is the cube in workcell.xml; the others are
+# extra geoms on every cube body, switched on by Workcell.reset. name -> (geom type, size).
+VARIANTS = {
+    "cube_4cm": ("box", (0.02, 0.02, 0.02)),
+    "cube_3cm": ("box", (0.015, 0.015, 0.015)),
+    "cube_5cm": ("box", (0.025, 0.025, 0.025)),
+    "cylinder": ("cylinder", (0.02, 0.02, 0.0)),     # radius, half height
+}
+VARIANT_NAMES = tuple(VARIANTS)
+HIDDEN_GROUP = 4                    # not drawn by the default visual options
+
+
+def half_height(variant: int) -> float:
+    kind, size = VARIANTS[VARIANT_NAMES[variant]]
+    return size[2] if kind == "box" else size[1]
+
 # Franka's flange-to-fingertip-center distance.
 TCP_OFFSET = (0.0, 0.0, 0.1034)
 
@@ -63,7 +79,25 @@ def build_spec(xml_path: Path = WORKCELL_XML) -> mujoco.MjSpec:
     grip.gainprm[0] *= GRIP_GAIN
     grip.biasprm[1] *= GRIP_GAIN
     grip.biasprm[2] *= GRIP_GAIN ** 0.5
+    _add_variants(spec)
     return spec
+
+
+def _add_variants(spec: mujoco.MjSpec) -> None:
+    """Extra geoms per cube body for the object variants, off until Workcell.reset."""
+    types = {"box": mujoco.mjtGeom.mjGEOM_BOX, "cylinder": mujoco.mjtGeom.mjGEOM_CYLINDER}
+    for cube in CUBES:
+        body = spec.body(cube)
+        main = body.geoms[0]
+        body.explicitinertial = True          # variants share the 4 cm cube's mass and inertia
+        body.mass, body.inertia, body.ipos = main.mass, [main.mass * 0.04**2 / 6] * 3, [0, 0, 0]
+        for name in VARIANT_NAMES[1:]:
+            kind, size = VARIANTS[name]
+            body.add_geom(name=f"{cube}_{name}", type=types[kind], size=list(size),
+                          rgba=list(main.rgba), friction=list(main.friction), mass=1e-6,
+                          contype=2, conaffinity=0, group=HIDDEN_GROUP)
+            # contype 2 / conaffinity 0 collides with nothing, but a nonzero contype keeps the geom
+            # in the body's collision BVH so switching it on at runtime works.
 
 
 def build_model(xml_path: Path = WORKCELL_XML) -> mujoco.MjModel:
