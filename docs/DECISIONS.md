@@ -182,3 +182,7 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Also: run_eval accepts "<graph method>+<policy>" (e.g. graph_loop+learned_arbiter) so the
   full system, an LLM-written and loop-repaired graph run under the learned arbiter, gets
   its own row.
+- The loop can rehearse as deployed (run_loop --camera-noise: RGB-D locator swapped in, camera
+  noise on in the loop and the held-out check). The graph_loop rows in the evaluation come
+  from planner graphs repaired this way; the Phase 5 seeded-bug benchmark keeps the clean
+  sensor. rehearsal.runner.with_rgbd is the one place the locator swap lives.

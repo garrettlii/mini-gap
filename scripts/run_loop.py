@@ -2,6 +2,7 @@
 
   uv run python scripts/run_loop.py --task place --bug diagonal_grasp
   uv run python scripts/run_loop.py --task place --start planner
+  uv run python scripts/run_loop.py --task place --start planner --camera-noise   # as deployed
 
 Optimizes on one block of rehearsal seeds, then measures before/after on a disjoint held-out
 block of rehearsal seeds. Writes edits.jsonl (Phase 6 data) and metrics.json.
@@ -20,7 +21,7 @@ from gap.agents.llm import local_llm
 from gap.agents.node_specialist import propose_fix
 from gap.agents.planner import plan
 from gap.rehearsal.loop import LoopConfig, improve
-from gap.rehearsal.runner import rehearse
+from gap.rehearsal.runner import rehearse, with_rgbd
 from gap.rehearsal.seeded_bugs import BUGS, buggy_graph
 from gap.sim.task_sampler import sample, task_config
 from gap.utils.runs import RunDir
@@ -41,11 +42,14 @@ def main() -> None:
     ap.add_argument("--adapter", default=None, help="LoRA adapter for the specialist (Phase 6)")
     ap.add_argument("--specialist", default="mlx_repo", choices=["mlx_repo", "planner_repo"],
                     help="configs/models.yaml key: the 2B repair model or the 4B planner model")
+    ap.add_argument("--camera-noise", action="store_true",
+                    help="rehearse as deployed: RGB-D locator and the camera noise model")
     args = ap.parse_args()
 
     cfg = LoopConfig(args.task, n_instances=args.n, max_iters=args.iters,
-                     seed_offset=args.seed_offset)
+                     seed_offset=args.seed_offset, camera_noise=args.camera_noise)
     name = f"loop_{args.task}_{args.bug or args.start}_{args.specialist.split('_')[0]}"
+    name += "_noise" if args.camera_noise else ""
     run = RunDir(name, {**vars(args), "loop": vars(cfg)})
     if args.start == "planner":
         instruction = task_config()["tasks"][args.task]["instructions"][0]
@@ -56,14 +60,17 @@ def main() -> None:
             return
     else:
         graph = buggy_graph(args.task, args.bug)
+    if args.camera_noise:
+        graph = with_rgbd(graph)
     specialist = functools.partial(propose_fix, local_llm(run, "specialist", model=args.specialist,
                                                           adapter_path=args.adapter))
     critic = functools.partial(propose_structure, local_llm(run, "critic", model="planner_repo"))
     final = improve(graph, cfg, specialist, critic, run)
 
     held = [sample(args.task, s) for s in rehearsal_seeds(args.heldout, HELDOUT_OFFSET)]
-    before = sum(r.success for r in rehearse(graph, held, keep_states=False))
-    after = sum(r.success for r in rehearse(final, held, keep_states=False))
+    noise = args.camera_noise
+    before = sum(r.success for r in rehearse(graph, held, keep_states=False, camera_noise=noise))
+    after = sum(r.success for r in rehearse(final, held, keep_states=False, camera_noise=noise))
     run.write_json("final_graph.json", final.model_dump(by_alias=True, exclude_none=True))
     run.metrics(task=args.task, start=args.start, bug=args.bug, heldout_n=args.heldout,
                 heldout_before=before, heldout_after=after)

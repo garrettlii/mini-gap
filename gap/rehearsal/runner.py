@@ -42,6 +42,15 @@ def rehearse(graph: Graph, instances: list[TaskInstance], workers: int = 6,
     return _pool(workers).map(_run_one, jobs)
 
 
+def with_rgbd(graph: Graph) -> Graph:
+    """The graph as deployed: the privileged ground-truth locator swapped for the RGB-D one."""
+    from gap.graph.edits import SwapSkill, apply_edit
+    for n in graph.nodes:
+        if n.skill == "locate_object_gt":
+            graph = apply_edit(graph, SwapSkill(node=n.id, skill="locate_object_rgbd"))
+    return graph
+
+
 def map_jobs(fn, jobs: list, workers: int = 6) -> list:
     """fn(job) for every job on the shared spawn pool (fn must be a module-level function)."""
     if workers <= 1:

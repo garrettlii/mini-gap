@@ -35,6 +35,7 @@ class LoopConfig:
     workers: int = 6
     seed_offset: int = 0         # which block of rehearsal seeds to optimize on
     proposals_per_iter: int = 2  # specialist proposals tried per iteration
+    camera_noise: bool = False   # rehearse with the overhead camera noise model
 
 
 def improve(graph: Graph, cfg: LoopConfig, specialist: Specialist, critic: Critic,
@@ -45,7 +46,8 @@ def improve(graph: Graph, cfg: LoopConfig, specialist: Specialist, critic: Criti
     ordering/missing-step problems -> critic. Validate every edited graph before rehearsing.
     """
     instances = [sample(cfg.task, s) for s in rehearsal_seeds(cfg.n_instances, cfg.seed_offset)]
-    results = rehearse(graph, instances, cfg.workers, keep_states=True)
+    results = rehearse(graph, instances, cfg.workers, keep_states=True,
+                        camera_noise=cfg.camera_noise)
     best = sum(r.success for r in results)
     tried: dict[str, list[str]] = {}   # node -> edits already rejected, shown to the specialist
     stale = 0
@@ -64,7 +66,8 @@ def improve(graph: Graph, cfg: LoopConfig, specialist: Specialist, critic: Criti
             if errors:
                 run.append_jsonl("edits.jsonl", {**row, "invalid": format_errors(errors)})
                 continue
-            new_results = rehearse(candidate, instances, cfg.workers, keep_states=True)
+            new_results = rehearse(candidate, instances, cfg.workers, keep_states=True,
+                                    camera_noise=cfg.camera_noise)
             after = sum(r.success for r in new_results)
             accepted = after > best
             run.append_jsonl("edits.jsonl", {**row, "success_after": after, "accepted": accepted})

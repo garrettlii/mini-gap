@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from gap.arbiter.fallback import SKILL_TYPE, observe
-from gap.graph.edits import SetParam, SwapSkill, apply_edit
+from gap.graph.edits import SetParam, apply_edit
 from gap.graph.schema import Graph
 from gap.skills import registry
 
@@ -34,11 +34,10 @@ WIDTH_BAND = (0.02, 0.055)   # verify_grasp band covering the 3-5 cm variants
 
 
 def arbiter_graph(task: str) -> Graph:
+    from gap.rehearsal.runner import with_rgbd
     from gap.rehearsal.seeded_bugs import reference_graph
-    g = reference_graph(task)
+    g = with_rgbd(reference_graph(task))
     for n in g.nodes:
-        if n.skill == "locate_object_gt":
-            g = apply_edit(g, SwapSkill(node=n.id, skill="locate_object_rgbd"))
         if n.skill == "verify_grasp":
             g = apply_edit(g, SetParam(node=n.id, param="width_min", value=WIDTH_BAND[0]))
             g = apply_edit(g, SetParam(node=n.id, param="width_max", value=WIDTH_BAND[1]))
