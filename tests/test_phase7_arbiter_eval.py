@@ -113,3 +113,12 @@ def test_render_refills_marked_blocks_idempotently(tmp_path):
     once = render(text, tmp_path)
     assert render(once, tmp_path) == once
     assert "(16/20)" in once and "| m | 0.80" in once and once.startswith("x <!-- rate")
+
+
+def test_eval_swaps_out_the_ground_truth_locator(monkeypatch):
+    from gap.eval import run_eval
+    seen = {}
+    monkeypatch.setattr(run_eval, "rehearse", lambda g, *a, **k: seen.setdefault("graph", g))
+    run_eval._rehearse(reference_graph("place"), [], True)
+    skills = {n.skill for n in seen["graph"].nodes}
+    assert "locate_object_rgbd" in skills and "locate_object_gt" not in skills

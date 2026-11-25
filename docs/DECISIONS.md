@@ -162,3 +162,23 @@ splits) before making it. Format: date, decision, why, what it affects.
   default mode uses eval seeds.
 - seeded_bugs.random_bug seeds its generator with "<task>:<seed>" so place and stack get
   different bugs for the same seed.
+
+## 2026-11-24: Arbiter sweep over learned-executor quality
+- Why: on dev seeds the 600-demo learned grasp beats the scripted close in every paired state,
+  so the learned arbiter always picks it and ties always_learned. That shows the arbiter finds
+  the dominant executor, not that per-node choice helps when neither executor dominates.
+- What: retrain the behavior-cloned grasp on 25 and 100 demos (same seeds, first N of the
+  BC block), refit the arbiter on fresh paired data for each, and run the six policies on the
+  nominal and object eval splits. Reported next to the 600-demo rows whatever the outcome.
+
+## 2026-11-24: Evaluation runs every policy with RGB-D perception
+- Why: the shared worked example in the agent prompts uses locate_object_gt (ground truth,
+  documented as privileged), so LLM-written policies use it, and the camera noise model
+  would not touch them while the arbiter graphs face it. A deployed robot has no ground-truth
+  locator.
+- What: run_eval swaps locate_object_gt for locate_object_rgbd (same ports) in every graph,
+  and renames the call in code policies, for all methods and splits. The prompts and the
+  Phase 4-6 runs are unchanged.
+- Also: run_eval accepts "<graph method>+<policy>" (e.g. graph_loop+learned_arbiter) so the
+  full system, an LLM-written and loop-repaired graph run under the learned arbiter, gets
+  its own row.

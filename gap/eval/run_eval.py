@@ -12,7 +12,10 @@ Methods:
                                     <task>.json files)
   always_skill ... oracle           the Phase 6b arbitration policies on the arbiter graphs
                                     (--models <train_arbiter run>)
-The camera noise model is on for every method unless --clean-camera.
+  <graph method>+<policy>           a graph method run under an arbitration policy, e.g.
+                                    graph_loop+learned_arbiter
+The camera noise model is on for every method unless --clean-camera. Every policy runs with
+the RGB-D locator: the ground-truth locator (privileged) is swapped out at evaluation.
 --dev swaps in dev seeds (a block of 1000 per split) for tuning before the real eval.
 """
 
@@ -27,6 +30,7 @@ import numpy as np
 
 from gap.arbiter.policies import POLICIES, arbiter_graph
 from gap.eval.splits import SPLITS
+from gap.graph.edits import SwapSkill, apply_edit
 from gap.graph.schema import Graph
 from gap.rehearsal.runner import map_jobs, rehearse
 from gap.sim.task_sampler import sample
@@ -35,6 +39,7 @@ from gap.utils.seeds import eval_seeds, seed_range
 
 LLM_METHODS = ("code", "graph_single", "graph_multi")
 TRAINED_TASKS = ("place", "stack")
+GT_LOCATOR, RGBD_LOCATOR = "locate_object_gt", "locate_object_rgbd"   # same ports
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -74,32 +79,44 @@ def _seeds(split: str, n: int, dev: bool) -> list[int]:
 
 
 def _run_method(method, task, insts, noise, args, run):
-    if method in POLICIES:
-        if not args.models:
-            raise SystemExit("--models is required for the arbitration policies")
-        return rehearse(arbiter_graph(task), insts, keep_states=False, allow_eval=True,
-                        camera_noise=noise, policy=(method, args.models))
-    if method == "graph_loop":
+    """method is a name from the module docstring, optionally "<graph method>+<policy>"."""
+    base, _, arb = method.partition("+")
+    if (base in POLICIES or arb) and not args.models:
+        raise SystemExit("--models is required for the arbitration policies")
+    if base in POLICIES:
+        return _rehearse(arbiter_graph(task), insts, noise, (base, args.models))
+    policy = (arb, args.models) if arb else None
+    if base == "graph_loop":
         graph = Graph.model_validate_json((Path(args.loop_graphs) / f"{task}.json").read_text())
-        return rehearse(graph, insts, keep_states=False, allow_eval=True, camera_noise=noise)
-    if method not in LLM_METHODS:
+        return _rehearse(graph, insts, noise, policy)
+    if base not in LLM_METHODS:
         raise SystemExit(f"unknown method {method!r}")
-    policies = {i: _llm_policy(method, task, i, args, run) for i in {x.instruction for x in insts}}
     results = [None] * len(insts)
     by_instr: dict[str, list[int]] = {}
     for k, inst in enumerate(insts):
         by_instr.setdefault(inst.instruction, []).append(k)
     for instr, idx in by_instr.items():
-        pol = policies[instr]
+        pol = _llm_policy(base, task, instr, args, run)
         sub = [insts[k] for k in idx]
         if pol.get("graph"):
-            out = rehearse(Graph.model_validate(pol["graph"]), sub, keep_states=False,
-                           allow_eval=True, camera_noise=noise)
+            out = _rehearse(Graph.model_validate(pol["graph"]), sub, noise, policy)
+        elif policy:
+            raise SystemExit(f"{method}: arbitration needs a graph, not code")
         else:
-            out = map_jobs(_code_job, [(pol.get("code"), inst, noise) for inst in sub])
+            code = (pol.get("code") or "").replace(GT_LOCATOR, RGBD_LOCATOR) or None
+            out = map_jobs(_code_job, [(code, inst, noise) for inst in sub])
         for k, r in zip(idx, out, strict=True):
             results[k] = r
     return results
+
+
+def _rehearse(graph: Graph, insts, noise: bool, policy=None):
+    """Eval rehearsal; the privileged ground-truth locator is not available at deployment."""
+    for n in graph.nodes:
+        if n.skill == GT_LOCATOR:
+            graph = apply_edit(graph, SwapSkill(node=n.id, skill=RGBD_LOCATOR))
+    return rehearse(graph, insts, keep_states=False, allow_eval=True, camera_noise=noise,
+                    policy=policy)
 
 
 def _llm_policy(method: str, task: str, instruction: str, args, run) -> dict:
