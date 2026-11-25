@@ -2,7 +2,9 @@
 train_type: lora
 num_layers: 16
 lora_parameters: {rank: 8, dropout: 0.0, scale: 10.0}
-batch_size: 2
+batch_size: 1
+gradient_accumulation_steps: 2   # 2 prompts x 4 samples per update, one prompt in memory
+grad_checkpoint: true
 group_size: 4
 iters: 100
 learning_rate: 5.0e-6

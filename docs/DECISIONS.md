@@ -197,3 +197,7 @@ splits) before making it. Format: date, decision, why, what it affects.
   (width_min) but sets it to the grasp width as printed in the report (3 decimals), which
   is just above the true width, so the fix fails. SFT cannot learn that family; GRPO's
   sampling can. The report precision is left unchanged so SFT prompts match the data.
+- Memory: SFT at batch 4 ran out of GPU memory on 16 GB (Qwen3.5 is a hybrid model, three of
+  four layers linear attention, which trains slowly in MLX). sft_v2 and grpo_v1 now process one
+  prompt at a time with gradient accumulation (same effective batch) and gradient
+  checkpointing; SFT peak memory fell from 12 GB to 3.5 GB at about 15 s per update.
