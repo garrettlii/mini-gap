@@ -1,0 +1,32 @@
+{
+ "comparisons": [
+  {
+   "a": "learned_retry",
+   "b": "always_learned",
+   "episodes": 900,
+   "a_only": 70,
+   "b_only": 0,
+   "p": 1.6940658945086007e-21,
+   "sources": [
+    "20261126-003116_eval",
+    "20261126-022601_eval",
+    "20261126-030905_eval",
+    "20261126-032726_eval"
+   ]
+  },
+  {
+   "a": "arbiter_fallback",
+   "b": "learned_retry",
+   "episodes": 900,
+   "a_only": 4,
+   "b_only": 6,
+   "p": 0.75390625,
+   "sources": [
+    "20261126-003116_eval",
+    "20261126-022601_eval",
+    "20261126-030905_eval",
+    "20261126-032726_eval"
+   ]
+  }
+ ]
+}

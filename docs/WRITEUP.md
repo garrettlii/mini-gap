@@ -25,9 +25,11 @@ learned grasp and ties always-learned; a margin that favors the faster scripted 
 trades success for time. When a task starts from a stack, so a grasp takes a cube off
 another cube, the scripted grasp wins a share of states. An arbiter refit on such states
 beats both single executors episode by episode, with faster grasps than always-learned, and
-the rule transfers to a taller stack it never saw. A skill-first fallback that retries
-within the node does at least as well as that arbiter; given the same retry, the arbiter
-beats it on the task whose goal is a stack and ties it on the one whose goal is zones.
+the rule transfers to a taller stack it never saw. A second attempt inside the grasp node
+adds more than the choice: retrying the learned grasp from where it failed beats
+always-learned on every task, and switching to the other executor instead adds to that only
+on the stacked tasks, clearly on the taller stack. The arbiter's choice with a switch on
+failure is the best policy tested on every task, or tied with it.
 
 The trained repair model fixes more held-out bugs than the untrained one on every task,
 including the held-out task. The rehearsal loop repairs seeded grasp-geometry bugs on every
@@ -111,9 +113,9 @@ cells have, applied identically to every method:
 **Executors.** Each node runs one of: the scripted skill; the learned executor (which skips
 the skill's pre-check, since that check encodes the scripted skill's assumptions, but must
 pass the same post-check); *fallback* (skill, then the learned executor from wherever the
-failure left the scene, or the same with the learned executor first); or *oracle* (skill; on
-failure, restore the snapshot and run the learned executor), an in-simulation upper bound no
-real robot can run.
+failure left the scene, or the same with the learned executor first or twice); or *oracle*
+(skill; on failure, restore the snapshot and run the learned executor), an in-simulation
+upper bound no real robot can run.
 
 **Learned grasp.** A closed-loop MLP behavior-cloned from a privileged servo demonstrator. It
 observes the nearest object's position and yaw relative to the hand, with millimeter noise,
@@ -145,8 +147,9 @@ readable from the coefficients.
 
 **Policies compared.** always_skill; always_learned; validity_only (skill unless its
 pre-check fails, the gating used in prior agentic manipulation work); fallback_on_failure;
-learned_arbiter; oracle; and, on the stacked tasks, arbiter_fallback (the arbiter's choice
-first, the other executor after a failed grasp).
+learned_arbiter; oracle; and two policies with a second try inside the grasp node, added
+with the stacked tasks: arbiter_fallback (the arbiter's choice first, the other executor
+after a failed grasp) and its control learned_retry (the learned grasp, then again).
 
 ## 4 Training a small repair model
 
@@ -337,6 +340,7 @@ Invert, evaluation seeds, camera noise on, the refit arbiter:
 | learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
 | oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
 | arbiter_fallback | 0.69 [0.59, 0.77] (69/100) | 0.77 [0.68, 0.84] (77/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
+| learned_retry | 0.64 [0.54, 0.73] (64/100) | 0.72 [0.63, 0.80] (72/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
 <!-- /table -->
 
 Matched episode by episode (same split and seed; the sign test counts the episodes only one
@@ -397,6 +401,8 @@ the refit arbiter still matches always_learned episode by episode:
 | A vs B | episodes | only A succeeded | only B succeeded | sign test p |
 |---|---|---|---|---|
 | learned_arbiter vs always_learned | 900 | 5 | 7 | 0.77 |
+| arbiter_fallback vs always_learned | 900 | 73 | 5 | 1.5e-16 |
+| arbiter_fallback vs fallback_on_failure | 900 | 180 | 14 | 6.5e-38 |
 <!-- /paired -->
 
 **A taller stack the arbiter never saw.** Unstack starts from a blue-green-red tower; two of
@@ -417,6 +423,7 @@ fallback_on_failure gets.
 | learned_arbiter | 0.55 [0.45, 0.64] (55/100) | 0.61 [0.51, 0.70] (61/100) | 0.36 [0.27, 0.46] (36/100) |
 | oracle | 0.67 [0.57, 0.75] (67/100) | 0.72 [0.63, 0.80] (72/100) | 0.38 [0.29, 0.48] (38/100) |
 | arbiter_fallback | 0.71 [0.61, 0.79] (71/100) | 0.72 [0.63, 0.80] (72/100) | 0.37 [0.28, 0.47] (37/100) |
+| learned_retry | 0.59 [0.49, 0.68] (59/100) | 0.63 [0.53, 0.72] (63/100) | 0.34 [0.25, 0.44] (34/100) |
 <!-- /table -->
 
 <!-- paired: paired_unstack -->
@@ -454,6 +461,63 @@ Some object-split towers (a cylinder stacked with a 3 cm cube) sink more than th
 settle check allows. Those episodes end before the first node and count as failures for
 every policy, so they lower every object-split rate equally and leave the paired
 comparisons unchanged.
+
+**Switching executor, or just trying again?** In the reference graphs a grasp that fails its
+post-check ends the episode (the retry edges start at the grasp check that follows), so a
+policy that runs a second executor inside the node also gets an attempt the others do not.
+The control learned_retry runs the learned grasp and, after a failure, the learned grasp
+again from the state the failure left: arbiter_fallback's budget without the switch. The
+hypothesis, logged before any learned_retry run: the retry alone matches arbiter_fallback on
+the table tasks and falls short of it on the stacked ones.
+
+Invert:
+
+<!-- paired: retry_invert -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_retry vs always_learned | 400 | 63 | 0 | 2.2e-19 |
+| arbiter_fallback vs learned_retry | 400 | 19 | 9 | 0.087 |
+<!-- /paired -->
+
+Unstack:
+
+<!-- paired: retry_unstack -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_retry vs always_learned | 300 | 23 | 0 | 2.4e-07 |
+| arbiter_fallback vs learned_retry | 300 | 32 | 8 | 0.00018 |
+<!-- /paired -->
+
+Place, stack and sort (all five splits; the success rates follow):
+
+<!-- paired: retry_table -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_retry vs always_learned | 900 | 70 | 0 | 1.7e-21 |
+| arbiter_fallback vs learned_retry | 900 | 4 | 6 | 0.75 |
+<!-- /paired -->
+
+<!-- table: eval_arbiter_refit methods=always_skill,always_learned,fallback_on_failure,learned_arbiter,arbiter_fallback,learned_retry -->
+| method | nominal | pose | object | distractors | heldout_task |
+|---|---|---|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.50 [0.43, 0.57] (100/200) | 0.46 [0.39, 0.52] (91/200) | 0.48 [0.42, 0.55] (97/200) | 0.37 [0.28, 0.47] (37/100) |
+| always_learned | 0.75 [0.69, 0.80] (150/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.72 [0.63, 0.80] (72/100) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (127/200) | 0.73 [0.67, 0.79] (147/200) | 0.66 [0.59, 0.72] (131/200) | 0.72 [0.65, 0.78] (144/200) | 0.59 [0.49, 0.68] (59/100) |
+| learned_arbiter | 0.74 [0.68, 0.80] (149/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.71 [0.61, 0.79] (71/100) |
+| arbiter_fallback | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.82 [0.76, 0.87] (164/200) | 0.91 [0.86, 0.94] (182/200) | 0.80 [0.71, 0.87] (80/100) |
+| learned_retry | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.80 [0.71, 0.87] (80/100) |
+<!-- /table -->
+
+The hypothesis holds on the table tasks and on unstack, and is not confirmed on invert. A
+retry accounts for most of what a second try buys: learned_retry never loses an episode to
+always_learned (its first attempt is always_learned's) and wins many on every task, so from
+the state a failed learned grasp leaves, trying again often works. On the table tasks switching to the scripted close adds nothing over trying the
+learned grasp again, as the paired executor data predict. On unstack, running the other
+executor after a failure solves clearly more episodes than repeating the same one; on invert
+the difference points the same way but is not significant at this sample size. The per-node
+choice pays where the two executors fail in different states, and a cheap retry inside the
+node captures most of the rest. Over all five tasks, the arbiter's choice with a switch on
+failure is the best policy tested or tied with it.
 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 

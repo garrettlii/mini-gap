@@ -230,9 +230,43 @@
    "grasp_s": 158.32,
    "grasps": 234,
    "skill_grasps": 94
+  },
+  {
+   "method": "learned_retry",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 59,
+   "n": 100,
+   "mean_sim_s": 27.689399999996986,
+   "grasp_s": 267.26,
+   "grasps": 250,
+   "skill_grasps": 0
+  },
+  {
+   "method": "learned_retry",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 63,
+   "n": 100,
+   "mean_sim_s": 28.110399999997234,
+   "grasp_s": 253.06,
+   "grasps": 249,
+   "skill_grasps": 0
+  },
+  {
+   "method": "learned_retry",
+   "split": "object",
+   "task": "unstack",
+   "successes": 34,
+   "n": 100,
+   "mean_sim_s": 24.964199999997174,
+   "grasp_s": 197.34,
+   "grasps": 224,
+   "skill_grasps": 0
   }
  ],
  "sources": [
-  "20261126-024558_eval"
+  "20261126-024558_eval",
+  "20261126-032155_eval"
  ]
 }

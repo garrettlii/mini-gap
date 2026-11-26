@@ -30,7 +30,7 @@ Models are local MLX Qwen checkpoints named in `configs/models.yaml` (no paid AP
 | `gap/agents` | LLM wrapper, planner, node specialist, critic |
 | `gap/rehearsal` | Parallel rehearsal, diagnosis, self-learning loop |
 | `gap/train` | SFT data and GRPO reward for Qwen on MLX |
-| `gap/arbiter` | Learned fallbacks, paired data, arbiter, six policies |
+| `gap/arbiter` | Learned fallbacks, paired data, arbiter, arbitration policies |
 | `gap/eval` | Splits, eval runner, report |
 | `docs/` | Spec, progress log, decision log |
 
@@ -107,6 +107,7 @@ episode-matched sign tests below the table):
 | learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
 | oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
 | arbiter_fallback | 0.69 [0.59, 0.77] (69/100) | 0.77 [0.68, 0.84] (77/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
+| learned_retry | 0.64 [0.54, 0.73] (64/100) | 0.72 [0.63, 0.80] (72/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
 <!-- /table -->
 
 <!-- sweep: arbiter_margin_invert methods=always_skill,always_learned,learned_arbiter,learned_arbiter@0.1,learned_arbiter@0.3 -->
@@ -143,6 +144,7 @@ zones; the invert-refit arbiter with no unstack data):
 | learned_arbiter | 0.55 [0.45, 0.64] (55/100) | 0.61 [0.51, 0.70] (61/100) | 0.36 [0.27, 0.46] (36/100) |
 | oracle | 0.67 [0.57, 0.75] (67/100) | 0.72 [0.63, 0.80] (72/100) | 0.38 [0.29, 0.48] (38/100) |
 | arbiter_fallback | 0.71 [0.61, 0.79] (71/100) | 0.72 [0.63, 0.80] (72/100) | 0.37 [0.28, 0.47] (37/100) |
+| learned_retry | 0.59 [0.49, 0.68] (59/100) | 0.63 [0.53, 0.72] (63/100) | 0.34 [0.25, 0.44] (34/100) |
 <!-- /table -->
 
 <!-- paired: paired_unstack -->
@@ -154,6 +156,22 @@ zones; the invert-refit arbiter with no unstack data):
 | arbiter_fallback vs learned_arbiter | 300 | 28 | 0 | 7.5e-09 |
 | fallback_on_failure vs learned_arbiter | 300 | 36 | 12 | 0.00072 |
 <!-- /paired -->
+
+**A second try inside the grasp node** (place, stack, sort; refit arbiter; `learned_retry`
+runs the learned grasp again after a failure, the control for `arbiter_fallback`'s switch;
+here the switch adds nothing over a plain retry, while on unstack it does; paired tests in
+the write-up):
+
+<!-- table: eval_arbiter_refit methods=always_skill,always_learned,fallback_on_failure,learned_arbiter,arbiter_fallback,learned_retry -->
+| method | nominal | pose | object | distractors | heldout_task |
+|---|---|---|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.50 [0.43, 0.57] (100/200) | 0.46 [0.39, 0.52] (91/200) | 0.48 [0.42, 0.55] (97/200) | 0.37 [0.28, 0.47] (37/100) |
+| always_learned | 0.75 [0.69, 0.80] (150/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.72 [0.63, 0.80] (72/100) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (127/200) | 0.73 [0.67, 0.79] (147/200) | 0.66 [0.59, 0.72] (131/200) | 0.72 [0.65, 0.78] (144/200) | 0.59 [0.49, 0.68] (59/100) |
+| learned_arbiter | 0.74 [0.68, 0.80] (149/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.71 [0.61, 0.79] (71/100) |
+| arbiter_fallback | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.82 [0.76, 0.87] (164/200) | 0.91 [0.86, 0.94] (182/200) | 0.80 [0.71, 0.87] (80/100) |
+| learned_retry | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.80 [0.71, 0.87] (80/100) |
+<!-- /table -->
 
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
 instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
