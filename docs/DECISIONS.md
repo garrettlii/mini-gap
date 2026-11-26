@@ -316,3 +316,19 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Evaluation: the invert-refit arbiter (runs/20261126-020348_train_arbiter) with no unstack
   data, the six policies, splits nominal, pose and object, eval seeds. No distractors split:
   all three cubes are in use, so it would repeat nominal scene for scene.
+
+## 2026-11-26: Arbiter with a second try (arbiter_fallback)
+- Why: on invert nominal and pose, fallback_on_failure leads every other policy, the arbiter
+  included. It gets two executors within one node visit (skill, then the learned grasp from
+  the state the failure left); the arbiter gets one. That compares a choice against a choice
+  plus a retry. The fair question is whether the arbiter's choice still helps once both have
+  the second try.
+- `arbiter_fallback`: the arbiter picks which executor goes first; after a failed post-check
+  the other runs, continuing from the failure state (no restore), as in fallback_on_failure.
+  The interpreter gains executor "fallback_learned" (learned first, then skill).
+- Honest provenance: this policy was added after seeing the invert rows above, so invert is
+  not a clean test of it. The test is unstack, which has no result yet: hypothesis,
+  arbiter_fallback >= fallback_on_failure there, compared episode by episode (sign test).
+  Also run on invert and on place and stack (refit arbiter), reported as secondary.
+- Fix in passing: a fallback trace entry now counts the simulated steps of both attempts
+  (it counted only the second). No published table shows a fallback row's grasp time.

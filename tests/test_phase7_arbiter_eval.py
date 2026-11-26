@@ -41,6 +41,17 @@ def test_executor_values(cell, monkeypatch, executor):
     assert len(calls) == (executor != "skill")
 
 
+def test_fallback_learned_runs_the_skill_after_the_learned_executor_fails(cell):
+    from gap.graph.interpreter import run_graph
+    from gap.sim.task_sampler import sample
+    from gap.types import SkillResult
+    res = run_graph(reference_graph("place"), cell, sample("place", 50_001),
+                    executor_policy=lambda n, c, i: "fallback_learned" if n == "close" else "skill",
+                    learned_runner=lambda node, c, ins, ps: SkillResult(ok=False, message="no-op"))
+    close = next(t for t in res.trace if t.node_id == "close")
+    assert close.executor == "fallback_learned" and close.post_ok and res.success
+
+
 def test_arbiter_picks_the_executor_that_wins_in_that_region():
     from gap.arbiter.arbiter import Arbiter
     rng = np.random.default_rng(0)

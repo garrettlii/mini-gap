@@ -18,7 +18,8 @@ from gap.skills import registry
 from gap.types import EpisodeResult, SkillResult, TaskInstance, TraceEntry
 
 # Phase 6b hook: given (node_id, cell, instance) return "skill", "learned", "fallback" (skill,
-# then the learned executor if the skill fails), or "oracle" (try both from the same snapshot,
+# then the learned executor if the skill fails), "fallback_learned" (the same, learned first),
+# or "oracle" (try both from the same snapshot,
 # keep the skill's result if it succeeded, else the learned one; an in-sim upper bound).
 ExecutorPolicy = Callable[[str, Workcell, TaskInstance], str]
 # Phase 6b: runs a node with the learned executor instead of skill.run().
@@ -98,9 +99,13 @@ def _run_node(graph, node, cell, outputs, executor, learned_runner, visit) -> Tr
         return run_skill(node.id, node.skill, cell, inputs, node.params, executor=kind,
                          learned=learned, visit=visit, error=error)
 
-    if executor == "fallback":
-        entry = attempt("skill")
-        return entry if entry.post_ok or error else replace(attempt("learned"), executor="fallback")
+    if executor in ("fallback", "fallback_learned"):
+        first, second = ("skill", "learned") if executor == "fallback" else ("learned", "skill")
+        entry = attempt(first)
+        if entry.post_ok or error:
+            return entry
+        retry = attempt(second)       # continues from the state the failure left
+        return replace(retry, executor=executor, sim_steps=entry.sim_steps + retry.sim_steps)
     if executor == "oracle":
         snap = cell.snapshot()
         entry = attempt("skill")

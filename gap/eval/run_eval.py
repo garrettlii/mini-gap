@@ -10,8 +10,8 @@ Methods:
                                     one per (task, instruction), saved under policies/
   graph_loop                        the loop-repaired graph per task (--loop-runs: run_loop
                                     run dirs; each one's final_graph.json, keyed by its task)
-  always_skill ... oracle           the Phase 6b arbitration policies on the arbiter graphs
-                                    (--models <train_arbiter run>)
+  always_skill ... arbiter_fallback the arbitration policies (gap.arbiter.policies) on the
+                                    arbiter graphs (--models <train_arbiter run>)
   <graph method>+<policy>           a graph method run under an arbitration policy, e.g.
                                     graph_loop+learned_arbiter
   learned_arbiter@<margin>          the arbiter picks the learned grasp only if its predicted
