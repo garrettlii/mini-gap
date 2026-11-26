@@ -49,6 +49,8 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--methods", nargs="+", required=True)
     ap.add_argument("--splits", nargs="+", default=list(SPLITS))
+    ap.add_argument("--tasks", nargs="+", default=list(TRAINED_TASKS),
+                    help="tasks for splits without their own task list (heldout_task: sort)")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--models", default=None, help="train_arbiter run dir (arbiter methods)")
     ap.add_argument("--loop-runs", nargs="*", default=[], help="run_loop dirs (graph_loop)")
@@ -60,7 +62,7 @@ def main(argv: list[str] | None = None) -> None:
     noise = not args.clean_camera
     cells = []
     for split in args.splits:
-        for task in SPLITS[split].tasks or TRAINED_TASKS:
+        for task in SPLITS[split].tasks or args.tasks:
             insts = [sample(task, s, split) for s in _seeds(split, args.n, args.dev)]
             for method in args.methods:
                 results = _run_method(method, task, insts, noise, args, run)

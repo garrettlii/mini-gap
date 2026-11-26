@@ -99,6 +99,14 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
         object_poses[cube] = Pose((p.pos[0], p.pos[1], mb.half_height(variant)), p.quat)
         features[f"{cube}_variant"] = float(variant)
 
+    if "start_stacked" in task_cfg:   # top rests on bottom; the draws above stay unchanged
+        top, bottom = task_cfg["start_stacked"]["top"], task_cfg["start_stacked"]["bottom"]
+        b, t = object_poses[bottom], object_poses[top]
+        z = 2 * b.pos[2] + t.pos[2]                 # bottom's full height + top's half height
+        object_poses[top] = Pose((b.pos[0], b.pos[1], z), t.quat)
+        features.update({f"{top}_x": b.pos[0], f"{top}_y": b.pos[1],
+                         f"{top}_distance": features[f"{bottom}_distance"]})
+
     return TaskInstance(
         task = task,
         instruction = instruction,

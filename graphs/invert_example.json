@@ -1,0 +1,33 @@
+{
+  "task": "invert",
+  "nodes": [
+    {"id": "find_g", "skill": "locate_object_gt", "in": {"color": "green"}},
+    {"id": "plan_g", "skill": "plan_top_grasp", "in": {"pose": "find_g.pose"}},
+    {"id": "above_g", "skill": "move_to_pose", "in": {"pose": "plan_g.pre_pose"}},
+    {"id": "open_g", "skill": "open_gripper"},
+    {"id": "reach_g", "skill": "move_to_pose", "in": {"pose": "plan_g.grasp_pose"}, "params": {"speed": 0.3}},
+    {"id": "close_g", "skill": "close_gripper"},
+    {"id": "check_g", "skill": "verify_grasp", "in": {"color": "green"}},
+    {"id": "target_g", "skill": "compute_place_pose", "in": {"target": "zone_a"}},
+    {"id": "carry_g", "skill": "move_above", "in": {"pose": "target_g.pose"}, "params": {"height": 0.1}},
+    {"id": "lower_g", "skill": "move_to_pose", "in": {"pose": "target_g.pose"}, "params": {"speed": 0.2}},
+    {"id": "release_g", "skill": "open_gripper"},
+    {"id": "leave_g", "skill": "retreat"},
+    {"id": "find_r", "skill": "locate_object_gt", "in": {"color": "red"}},
+    {"id": "plan_r", "skill": "plan_top_grasp", "in": {"pose": "find_r.pose"}},
+    {"id": "above_r", "skill": "move_to_pose", "in": {"pose": "plan_r.pre_pose"}},
+    {"id": "open_r", "skill": "open_gripper"},
+    {"id": "reach_r", "skill": "move_to_pose", "in": {"pose": "plan_r.grasp_pose"}, "params": {"speed": 0.3}},
+    {"id": "close_r", "skill": "close_gripper"},
+    {"id": "check_r", "skill": "verify_grasp", "in": {"color": "red"}},
+    {"id": "target_r", "skill": "compute_place_pose", "in": {"target": "green"}},
+    {"id": "carry_r", "skill": "move_above", "in": {"pose": "target_r.pose"}, "params": {"height": 0.1}},
+    {"id": "lower_r", "skill": "move_to_pose", "in": {"pose": "target_r.pose"}, "params": {"speed": 0.2}},
+    {"id": "release_r", "skill": "open_gripper"},
+    {"id": "leave_r", "skill": "retreat"}
+  ],
+  "edges": [
+    {"from": "check_g", "to": "find_g", "on": "fail", "max_retries": 2},
+    {"from": "check_r", "to": "find_r", "on": "fail", "max_retries": 2}
+  ]
+}

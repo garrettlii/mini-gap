@@ -134,6 +134,11 @@ def test_publish_merges_runs(tmp_path):
         (tmp_path / f"run{k}" / "metrics.json").write_text(json.dumps({"cells": [cell]}))
     out = publish("lab", [str(tmp_path / "run0"), str(tmp_path / "run1")], tmp_path / "res")
     assert [c["split"] for c in load_cells([str(out)])] == ["s0", "s1"]
+    redo = {"method": "m", "split": "s0", "task": "place", "successes": 2, "n": 2}
+    (tmp_path / "run2").mkdir()
+    (tmp_path / "run2" / "metrics.json").write_text(json.dumps({"cells": [redo]}))
+    out = publish("lab", [str(tmp_path / f"run{k}") for k in range(3)], tmp_path / "res")
+    assert [(c["split"], c["successes"]) for c in load_cells([str(out)])] == [("s0", 2), ("s1", 1)]
 
 
 def test_loop_metrics_become_before_after_cells(tmp_path):
@@ -210,3 +215,19 @@ def test_executors_read_a_margin_from_the_name(monkeypatch):
                         lambda name, g, arb, margin=0.0, **kw: seen.update(name=name, m=margin))
     policies.executors("learned_arbiter@0.2", "x", None, 0)
     assert seen == {"name": "learned_arbiter", "m": 0.2}
+
+
+@pytest.mark.parametrize("split", ["nominal", "object"])
+def test_invert_starts_as_the_stack_goal(cell, split):
+    """Green rests on red at reset: stack's success holds, invert's (red on green) does not."""
+    from gap.sim import model_builder as mb
+    from gap.sim.success import check
+    from gap.sim.task_sampler import sample, task_config
+    inst = sample("invert", 50_000, split)
+    half = {c: mb.half_height(int(inst.features.get(f"{c}_variant", 0))) for c in mb.CUBES}
+    state = cell.reset(inst)                     # raises if the stack does not settle
+    tasks = task_config()["tasks"]
+    assert check("stack", state, tasks["stack"], half)
+    assert not check("invert", state, tasks["invert"], half)
+    g, r = inst.object_poses["green_cube"].pos, inst.object_poses["red_cube"].pos
+    assert g[:2] == r[:2] and g[2] == pytest.approx(2 * half["red_cube"] + half["green_cube"])

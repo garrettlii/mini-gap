@@ -24,7 +24,7 @@ def check(task: str, state: State, task_cfg: dict, half: dict[str, float] | None
     lift:  object z - CUBE_HALF >= min_height
     place: object center inside the zone's xy square, resting (z near CUBE_HALF),
            and gripper open if required
-    stack: top cube xy within xy_tol of bottom cube, and z about one cube height higher
+    stack, invert: top cube xy within xy_tol of bottom cube, and z about one cube height higher
     sort:  every object in its assigned zone
     Also require objects to be at rest (check velocity, or step a few times and compare);
     a cube sliding through the zone is not a success.
@@ -40,7 +40,7 @@ def check(task: str, state: State, task_cfg: dict, half: dict[str, float] | None
     if task == "place":
         opened = state["gripper_width"] >= OPEN_WIDTH or not c.get("gripper_open", False)
         return _resting_in_zone(obj[c["object"]].pos, c["zone"], h[c["object"]]) and opened
-    if task == "stack":
+    if task in ("stack", "invert"):
         top, bottom = obj[c["top"]].p, obj[c["bottom"]].p
         return (np.linalg.norm(top[:2] - bottom[:2]) <= c["xy_tol"]
                 and abs(top[2] - bottom[2] - h[c["top"]] - h[c["bottom"]]) <= Z_TOL

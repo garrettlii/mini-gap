@@ -52,15 +52,19 @@ def load_cells(metrics_paths: list[str]) -> list[dict]:
 
 def _paired_cells(run: Path) -> list[dict]:
     """Share of paired states per outcome (which executors passed the post-check from the same
-    snapshot); split = the learned grasp's observation and demo count."""
+    snapshot), per task; split = the learned grasp's observation and demo count."""
     cfg = json.loads((run / "config.json").read_text())
     split = f"{cfg.get('obs', 'privileged')}/{cfg['demos']}"   # no spaces: rate markers split on them
     rows = [r for r in read_jsonl(run / "paired.jsonl") if "obs" in r]
     names = {(True, False): "skill_only", (False, True): "learned_only",
              (True, True): "both", (False, False): "neither"}
-    return [{"method": name, "split": split, "task": "all", "n": len(rows),
-             "successes": sum((r["ok_skill"], r["ok_learned"]) == k for r in rows)}
-            for k, name in names.items()]
+    cells = []
+    for task in dict.fromkeys(r.get("task", "all") for r in rows):
+        rs = [r for r in rows if r.get("task", "all") == task]
+        cells += [{"method": name, "split": split, "task": task, "n": len(rs),
+                   "successes": sum((r["ok_skill"], r["ok_learned"]) == k for r in rs)}
+                  for k, name in names.items()]
+    return cells
 
 
 def results_table(metrics_paths: list[str], by: str = "split") -> str:
@@ -124,10 +128,13 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
 
 def publish(label: str, run_dirs: list[str], results_dir: Path = RESULTS) -> Path:
     """Merge the runs' cells into the tracked results folder under a stable label (several
-    runs when an evaluation was resumed in parts)."""
+    runs when an evaluation was resumed in parts). A cell repeated in a later run (same
+    method, split, task) replaces the earlier one, so a resumed run may redo a cell."""
     results_dir.mkdir(exist_ok=True)
     out = results_dir / f"{label}.json"
-    cells = load_cells([str(Path(d) / "metrics.json") for d in run_dirs])
+    merged = {(c["method"], c["split"], c["task"]): c
+              for c in load_cells([str(Path(d) / "metrics.json") for d in run_dirs])}
+    cells = list(merged.values())
     out.write_text(json.dumps({"cells": cells, "sources": [Path(d).name for d in run_dirs]},
                               indent=1))
     return out

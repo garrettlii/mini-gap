@@ -21,7 +21,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from gap.arbiter.arbiter import FEATURES, Arbiter
-from gap.arbiter.fallback import FallbackPolicy, collect_demos
+from gap.arbiter.fallback import FallbackPolicy, collect_demos, mode_of
 from gap.arbiter.paired_data import collect
 from gap.utils.runs import RunDir, read_jsonl
 from gap.utils.seeds import rehearsal_seeds
@@ -36,13 +36,20 @@ def main() -> None:
     ap.add_argument("--tasks", default="place,stack")
     ap.add_argument("--obs", choices=["privileged", "wrist"], default="privileged",
                     help="what the learned grasp sees (DECISIONS 2026-11-26)")
+    ap.add_argument("--bc-from", default=None,
+                    help="reuse that train_arbiter run's learned grasp; refit only the arbiter")
     args = ap.parse_args()
+    bc = _reuse_bc(args) if args.bc_from else None
     run = RunDir("train_arbiter", vars(args))
 
-    X, Y, demo_ok = collect_demos(rehearsal_seeds(args.demos, BC_SEED_OFFSET), mode=args.obs)
-    bc = FallbackPolicy("grasp", obs_mode=args.obs).fit(X, Y)
+    if bc is None:
+        X, Y, demo_ok = collect_demos(rehearsal_seeds(args.demos, BC_SEED_OFFSET), mode=args.obs)
+        bc = FallbackPolicy("grasp", obs_mode=args.obs).fit(X, Y)
+        demo_info = {"demo_steps": len(X), "demonstrator_success": demo_ok}
+        print(f"demos: {len(X)} steps, demonstrator success {demo_ok:.2f}", flush=True)
+    else:
+        demo_info = {"bc_from": args.bc_from}
     run.file("bc_grasp.pkl").write_bytes(pickle.dumps(bc))
-    print(f"demos: {len(X)} steps, demonstrator success {demo_ok:.2f}", flush=True)
 
     for task in args.tasks.split(","):
         n = collect(task, args.paired, run.file("paired.jsonl"), str(run.path))
@@ -53,12 +60,20 @@ def main() -> None:
     y_l = np.array([r["ok_learned"] for r in rows])
     arb = Arbiter().fit(obs, y_s, y_l)
     run.file("arbiter.pkl").write_bytes(pickle.dumps(arb))
-    run.metrics(demo_steps=len(X), demonstrator_success=demo_ok, paired_rows=len(rows),
+    run.metrics(**demo_info, paired_rows=len(rows),
                 skill_success=float(y_s.mean()), learned_success=float(y_l.mean()),
                 valid_rate=float(np.mean([r["valid"] for r in rows])),
                 coefficients=_coefficients(arb))
     print(json.dumps({"skill": y_s.mean(), "learned": y_l.mean(), "rows": len(rows)}))
     print(run.path)
+
+
+def _reuse_bc(args) -> FallbackPolicy:
+    """Load another run's learned grasp; its config's demos and observation become ours."""
+    src = json.loads(Path(args.bc_from, "config.json").read_text())
+    bc = pickle.loads(Path(args.bc_from, "bc_grasp.pkl").read_bytes())
+    args.demos, args.obs = src["demos"], mode_of(bc)
+    return bc
 
 
 def _coefficients(arb: Arbiter) -> dict:

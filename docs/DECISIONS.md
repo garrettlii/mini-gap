@@ -276,3 +276,28 @@ splits) before making it. Format: date, decision, why, what it affects.
   from the trace), so failed episodes that end early do not look fast. Also the share of
   grasp visits run by the scripted skill. run_eval writes both into each cell (grasp_s,
   grasps, skill_grasps); report.py renders them with a `sweep` block.
+
+## 2026-11-26: Invert task: grasps outside the learned executor's training
+- Hypothesis, written before any invert result: per-node arbitration beats both fixed
+  executors when they fail in different situations. The learned grasp was trained only on
+  objects resting on the table, and its wrist estimate assumes it (half height = top height
+  / 2). The scripted grasp takes its geometry from the overhead estimate, which handles a cube
+  resting on another cube. A dev probe (24 states, red resting on green, place graph,
+  wrist executor) agreed: the skill alone succeeded in 8, the learned grasp alone in 1.
+- Task `invert`: green starts on red (the stack task's goal state); success is red on green
+  (the stack check with roles swapped). Reference graph: grasp green off the stack, put it in
+  zone A, grasp red off the table, put it on green. One grasp of each kind per episode, so a
+  per-node choice can beat any fixed executor.
+- Sampler: task key `start_stacked: {top, bottom}`. After the usual draws (unchanged, so
+  other tasks' instances are identical), the top cube takes the bottom cube's xy and rests on
+  it (bottom height + its own half height), keeping its own sampled yaw.
+- The learned grasp is not retrained: the gap in its training data is what the arbiter must
+  route around. Only the arbiter is refit, on paired states from place, stack and invert
+  rehearsal seeds (`train_arbiter.py --bc-from` reuses a trained grasp).
+- Evaluation: the six policies with the refit arbiter on place, stack and invert (nominal,
+  pose, object, distractors) and sort (heldout_task), eval seeds. run_eval gains `--tasks`
+  for splits without their own task list.
+- Evaluation is deterministic (the 21 cells two runs shared were identical), so on place,
+  stack and sort only the refit arbiter is re-run; the fixed policies' rows there stand.
+- publish now lets a later run's cell replace an earlier one with the same method, split and
+  task (needed after a resumed margin sweep redid part of a split).

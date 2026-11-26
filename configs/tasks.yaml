@@ -27,6 +27,12 @@ tasks:
     instructions: ["stack the green cube on the red cube", "put green on top of red"]
     paraphrases: ["set the green block on top of the red block", "place green onto red to make a tower"]   # instruction split only
     success: {top: green_cube, bottom: red_cube, xy_tol: 0.015}
+  invert:                      # starts as stack's goal; grasps off a stack (DECISIONS 2026-11-26)
+    objects: [red_cube, green_cube]
+    start_stacked: {top: green_cube, bottom: red_cube}
+    instructions: ["put the red cube on top of the green cube", "flip the stack so red is on top"]
+    paraphrases: ["move green off red, then set red on green", "swap the two blocks in the tower"]   # instruction split only
+    success: {top: red_cube, bottom: green_cube, xy_tol: 0.015}
   sort:                        # held out from Qwen training in Phase 6
     objects: [red_cube, green_cube, blue_cube]
     instructions: ["put red and blue in zone A and green in zone B"]
