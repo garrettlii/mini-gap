@@ -7,7 +7,7 @@
 2. recovered failure: a seeded-bug graph fails; the loop's repaired graph succeeds on the same
    seed (a run_loop dir's final_graph.json, or problem #i of a gen_repairs run; both were
    rehearsed with the clean sensor)
-3. arbiter switching: sort on the object split; the caption names the executor at each node
+3. arbiter switching executors: sort on the object split; the caption names the executor at each node
 Each clip uses the first dev seed (from 50,000) whose episode shows what the clip is about.
 """
 
@@ -133,7 +133,7 @@ def main() -> None:
         return r.success and "learned" in grasp
     seed = find_seed(noisy, lambda: arbiter_graph("sort"), "sort", "object", switches, **arb)
     c, i = captioned(noisy, arbiter_graph("sort"), sample("sort", seed, "object"),
-                     "3/3 sort, object variants, arbiter picks per node", **arb)
+                     "3/3 sort, object variants: arbiter gives grasps to the learned policy", **arb)
     clips.append(c)
     infos.append(i)
 

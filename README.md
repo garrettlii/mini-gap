@@ -41,6 +41,11 @@ from `results/*.json` (copies of each run's metrics.json). Success rates on fixe
 seeds (100 per task and split) with Wilson 95% intervals; the overhead camera noise model is
 on and every policy uses RGB-D perception. Details and caveats: [docs/WRITEUP.md](docs/WRITEUP.md).
 
+[Demo video](docs/media/demo.mp4) (one minute, dev seeds, made by `scripts/record_videos.py`):
+a stack episode with the learned arbiter under camera noise; a seeded grasp-yaw bug failing,
+then the same seed after the repair loop's fix; sort on object variants with the executor
+named at each node.
+
 **Arbitration policies** (reference graphs; the grasp node runs the scripted skill, the
 learned grasp, or a per-node choice):
 
