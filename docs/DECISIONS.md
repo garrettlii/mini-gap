@@ -352,3 +352,13 @@ splits) before making it. Format: date, decision, why, what it affects.
   matches arbiter_fallback; on invert and unstack, where the stacked grasp fails the learned
   policy for a reason a retry does not remove (the half-height estimate assumes a cube on
   the table), arbiter_fallback beats it. Episode-matched sign tests, same seeds, refit arbiter.
+
+## 2026-11-26: Second try on the drafted graphs
+- Question: does a second try inside the grasp node also help the planner-drafted graphs
+  (graph_multi), as it helps the reference graphs? Same drafted policies, models and splits
+  as eval_methods (--policies-from runs/20261125-184132_eval, privileged learned grasp
+  runs/20261124-230951_train_arbiter), methods graph_multi+arbiter_fallback and
+  graph_multi+learned_retry, eval seeds.
+- Hypothesis, written before the run: on place both lift graph_multi above
+  graph_multi+learned_arbiter; on stack and sort nothing changes, since the drafted graphs
+  fail there for reasons outside the grasp node (structure and camera noise, section 5.2).
