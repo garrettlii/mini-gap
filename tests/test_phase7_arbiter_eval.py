@@ -134,3 +134,15 @@ def test_publish_merges_runs(tmp_path):
         (tmp_path / f"run{k}" / "metrics.json").write_text(json.dumps({"cells": [cell]}))
     out = publish("lab", [str(tmp_path / "run0"), str(tmp_path / "run1")], tmp_path / "res")
     assert [c["split"] for c in load_cells([str(out)])] == ["s0", "s1"]
+
+
+def test_loop_metrics_become_before_after_cells(tmp_path):
+    import json
+
+    from gap.eval.report import load_cells
+    m = {"task": "place", "start": "bug", "bug": "no_release", "heldout_n": 64,
+         "heldout_before": 0, "heldout_after": 60}
+    (tmp_path / "metrics.json").write_text(json.dumps(m))
+    cells = load_cells([str(tmp_path / "metrics.json")])
+    assert [(c["method"], c["split"], c["successes"]) for c in cells] == \
+        [("start_graph", "no_release", 0), ("after_loop", "no_release", 60)]

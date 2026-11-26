@@ -40,6 +40,10 @@ def load_cells(metrics_paths: list[str]) -> list[dict]:
                 for task, c in tasks.items():
                     cells.append({"method": method, "split": m.get("seeds", "dev"), "task": task,
                                   "successes": c["successes"], "n": c["n"]})
+        elif "heldout_before" in m:  # scripts/run_loop.py: held-out success before/after
+            for method, key in (("start_graph", "heldout_before"), ("after_loop", "heldout_after")):
+                cells.append({"method": method, "split": m.get("bug") or m["start"],
+                              "task": m["task"], "successes": m[key], "n": m["heldout_n"]})
     return cells
 
 
