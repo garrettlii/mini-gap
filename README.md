@@ -41,10 +41,11 @@ from `results/*.json` (copies of each run's metrics.json). Success rates on fixe
 seeds (100 per task and split) with Wilson 95% intervals; the overhead camera noise model is
 on and every policy uses RGB-D perception. Details and caveats: [docs/WRITEUP.md](docs/WRITEUP.md).
 
-[Demo video](docs/media/demo.mp4) (one minute, dev seeds, made by `scripts/record_videos.py`):
+[Demo video](docs/media/demo.mp4) (90 seconds, dev seeds, made by `scripts/record_videos.py`):
 a stack episode with the learned arbiter under camera noise; a seeded grasp-yaw bug failing,
 then the same seed after the repair loop's fix; sort on object variants with the executor
-named at each node.
+named at each node; invert, where the refit arbiter gives the grasp off the stack to the
+scripted close and the grasp from the table to the learned policy.
 
 **Arbitration policies** (reference graphs; the grasp node runs the scripted skill, the
 learned grasp, or a per-node choice):
@@ -152,6 +153,11 @@ training):
 
 ```bash
 uv run python scripts/train_arbiter.py --demos 600 --paired 200      # learned grasp + arbiter
+uv run python scripts/train_arbiter.py --obs wrist                   # wrist-camera learned grasp
+uv run python scripts/train_arbiter.py --bc-from runs/<wrist run> --tasks place,stack,invert
+uv run python -m gap.eval.run_eval --models runs/<refit run> --tasks invert \
+    --splits nominal pose object distractors --methods always_learned learned_arbiter ...
+uv run python -m gap.eval.report --paired paired_invert learned_arbiter always_learned runs/<eval>
 uv run python scripts/gen_repairs.py --per-task 60                   # teacher repair data
 uv run python scripts/train_repair.py sft  --logs runs/*_gen_repairs/edits.jsonl
 uv run python scripts/train_repair.py grpo --logs runs/*_gen_repairs/edits.jsonl \

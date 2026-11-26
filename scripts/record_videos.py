@@ -1,4 +1,4 @@
-"""Record the three demo clips on dev seeds and join them into one captioned video.
+"""Record the demo clips on dev seeds and join them into one captioned video.
 
   uv run python scripts/record_videos.py --models runs/<train_arbiter> --repaired runs/<loop run>
   uv run python scripts/record_videos.py --models runs/<train_arbiter> --repaired runs/<gen_repairs>#2
@@ -8,6 +8,8 @@
    seed (a run_loop dir's final_graph.json, or problem #i of a gen_repairs run; both were
    rehearsed with the clean sensor)
 3. arbiter switching executors: sort on the object split; the caption names the executor at each node
+4. with --invert-models (an arbiter refit on invert): invert, the stacked grasp run by the
+   scripted close and the grasp from the table by the learned policy
 Each clip uses the first dev seed (from 50,000) whose episode shows what the clip is about.
 """
 
@@ -105,25 +107,27 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--models", required=True, help="train_arbiter run dir")
     ap.add_argument("--repaired", required=True, help="run_loop run dir (final_graph.json)")
+    ap.add_argument("--invert-models", help="train_arbiter run refit on invert: a fourth clip")
     args = ap.parse_args()
     task, buggy, repaired, bug = repair_case(args.repaired)
     run = RunDir("videos", vars(args))
     noisy, clean = Workcell(camera_noise=True, video_size=(480, 640)), Workcell(video_size=(480, 640))
     arb = {"policy": "learned_arbiter", "models": args.models}
     clips, infos = [], []
+    k = 4 if args.invert_models else 3
 
     seed = find_seed(noisy, lambda: arbiter_graph("stack"), "stack", "nominal",
                      lambda r, m: r.success, **arb)
     c, i = captioned(noisy, arbiter_graph("stack"), sample("stack", seed),
-                     "1/3 stack, learned arbiter, noisy camera", **arb)
+                     f"1/{k} stack, learned arbiter, noisy camera", **arb)
     clips.append(c)
     infos.append(i)
 
     def fixed_only(r, m):
         return r.success and not episode(clean, buggy, sample(task, r.instance.seed))[0].success
     seed = find_seed(clean, lambda: repaired, task, "nominal", fixed_only)
-    for graph, title in ((buggy, f"2/3 {task}, seeded bug: {bug}"),
-                         (repaired, f"2/3 {task}, after the repair loop")):
+    for graph, title in ((buggy, f"2/{k} {task}, seeded bug: {bug}"),
+                         (repaired, f"2/{k} {task}, after the repair loop")):
         c, i = captioned(clean, graph, sample(task, seed), title)
         clips.append(c)
         infos.append(i)
@@ -133,12 +137,26 @@ def main() -> None:
         return r.success and "learned" in grasp
     seed = find_seed(noisy, lambda: arbiter_graph("sort"), "sort", "object", switches, **arb)
     c, i = captioned(noisy, arbiter_graph("sort"), sample("sort", seed, "object"),
-                     "3/3 sort, object variants: arbiter gives grasps to the learned policy", **arb)
+                     f"3/{k} sort, object variants: arbiter gives grasps to the learned policy", **arb)
     clips.append(c)
     infos.append(i)
 
-    for k, (frames, info) in enumerate(zip(clips, infos, strict=True)):
-        info["file"] = str(save_mp4(frames, run.file(f"clip{k}.mp4"), VIDEO_FPS).name)
+    if args.invert_models:
+        inv = {"policy": "learned_arbiter", "models": args.invert_models}
+
+        def splits_grasps(r, m):
+            last = {n: e for _, n, e in m if n.startswith("close")}
+            return r.success and last.get("close_g") == "skill" and last.get("close_r") == "learned"
+        seed = find_seed(noisy, lambda: arbiter_graph("invert"), "invert", "nominal",
+                         splits_grasps, **inv)
+        c, i = captioned(noisy, arbiter_graph("invert"), sample("invert", seed),
+                         "4/4 invert: stacked grasp to the skill, table grasp to the learned policy",
+                         **inv)
+        clips.append(c)
+        infos.append(i)
+
+    for j, (frames, info) in enumerate(zip(clips, infos, strict=True)):
+        info["file"] = str(save_mp4(frames, run.file(f"clip{j}.mp4"), VIDEO_FPS).name)
         run.append_jsonl("clips.jsonl", info)
     print(save_mp4([f for c in clips for f in c], run.file("demo.mp4"), VIDEO_FPS))
     run.metrics(clips=infos, seconds=sum(len(c) for c in clips) / VIDEO_FPS)
