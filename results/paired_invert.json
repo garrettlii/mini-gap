@@ -32,6 +32,18 @@
    "sources": [
     "20261126-020858_eval"
    ]
+  },
+  {
+   "a": "learned_arbiter@0.1",
+   "b": "always_learned",
+   "episodes": 400,
+   "a_only": 34,
+   "b_only": 17,
+   "p": 0.024092907698449295,
+   "sources": [
+    "20261126-020858_eval",
+    "20261126-023215_eval"
+   ]
   }
  ]
 }

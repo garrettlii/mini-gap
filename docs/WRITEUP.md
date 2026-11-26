@@ -336,14 +336,35 @@ of the two policies solved):
 | learned_arbiter vs always_learned | 400 | 22 | 5 | 0.0015 |
 | learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
 | learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
+| learned_arbiter@0.1 vs always_learned | 400 | 34 | 17 | 0.024 |
 <!-- /paired -->
 
 Here the arbiter beats both single executors. In a dev-seed check, the grasps it gives the
 scripted close are almost all the stacked one, and in the evaluation episodes it has fewer
-failures at the stacked grasp than always_learned. It
-does not beat fallback_on_failure, which runs the skill and, after a failed grasp, the
-learned one within the same node visit: the two solve different episodes, and the counts
-are close to even.
+failures at the stacked grasp than always_learned. It does not beat fallback_on_failure,
+which runs the skill and, after a failed grasp, the learned one within the same node visit:
+the two solve different episodes, and the counts are close to even.
+
+On invert the margin no longer trades success for speed at small values. Same margin grid as
+above, all four splits pooled:
+
+<!-- sweep: arbiter_margin_invert methods=always_skill,always_learned,learned_arbiter,learned_arbiter@0.05,learned_arbiter@0.1,learned_arbiter@0.2,learned_arbiter@0.3,learned_arbiter@0.5 -->
+| method | success | grasps by skill | s per grasp |
+|---|---|---|---|
+| always_skill | 0.41 [0.36, 0.45] (162/400) | 1.00 [0.99, 1.00] (669/669) | 0.27 |
+| always_learned | 0.53 [0.48, 0.58] (213/400) | 0.00 [0.00, 0.01] (0/650) | 1.15 |
+| learned_arbiter | 0.57 [0.53, 0.62] (230/400) | 0.24 [0.21, 0.28] (163/670) | 0.85 |
+| learned_arbiter@0.05 | 0.57 [0.53, 0.62] (230/400) | 0.34 [0.30, 0.37] (226/672) | 0.78 |
+| learned_arbiter@0.1 | 0.57 [0.53, 0.62] (230/400) | 0.47 [0.43, 0.51] (320/678) | 0.65 |
+| learned_arbiter@0.2 | 0.54 [0.49, 0.59] (217/400) | 0.59 [0.55, 0.63] (403/682) | 0.56 |
+| learned_arbiter@0.3 | 0.50 [0.45, 0.55] (201/400) | 0.73 [0.70, 0.76] (500/683) | 0.46 |
+| learned_arbiter@0.5 | 0.45 [0.40, 0.50] (179/400) | 0.92 [0.90, 0.94] (621/674) | 0.32 |
+<!-- /sweep -->
+
+Up to a margin of 0.1, success stays where it is while the share of grasps run by the
+scripted close grows, so the arbiter is both more successful and faster per grasp than
+always_learned (the paired table above includes margin 0.1). Beyond that, success falls
+toward always_skill's.
 
 The rule costs nothing where it does not apply: on place, stack and sort (all five splits),
 the refit arbiter still matches always_learned episode by episode:

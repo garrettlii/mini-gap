@@ -106,12 +106,23 @@ place, stack and invert paired states; episode-matched sign tests below the tabl
 | oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
 <!-- /table -->
 
+<!-- sweep: arbiter_margin_invert methods=always_skill,always_learned,learned_arbiter,learned_arbiter@0.1,learned_arbiter@0.3 -->
+| method | success | grasps by skill | s per grasp |
+|---|---|---|---|
+| always_skill | 0.41 [0.36, 0.45] (162/400) | 1.00 [0.99, 1.00] (669/669) | 0.27 |
+| always_learned | 0.53 [0.48, 0.58] (213/400) | 0.00 [0.00, 0.01] (0/650) | 1.15 |
+| learned_arbiter | 0.57 [0.53, 0.62] (230/400) | 0.24 [0.21, 0.28] (163/670) | 0.85 |
+| learned_arbiter@0.1 | 0.57 [0.53, 0.62] (230/400) | 0.47 [0.43, 0.51] (320/678) | 0.65 |
+| learned_arbiter@0.3 | 0.50 [0.45, 0.55] (201/400) | 0.73 [0.70, 0.76] (500/683) | 0.46 |
+<!-- /sweep -->
+
 <!-- paired: paired_invert -->
 | A vs B | episodes | only A succeeded | only B succeeded | sign test p |
 |---|---|---|---|---|
 | learned_arbiter vs always_learned | 400 | 22 | 5 | 0.0015 |
 | learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
 | learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
+| learned_arbiter@0.1 vs always_learned | 400 | 34 | 17 | 0.024 |
 <!-- /paired -->
 
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
