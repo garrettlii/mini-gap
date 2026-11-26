@@ -345,6 +345,15 @@ does not beat fallback_on_failure, which runs the skill and, after a failed gras
 learned one within the same node visit: the two solve different episodes, and the counts
 are close to even.
 
+The rule costs nothing where it does not apply: on place, stack and sort (all five splits),
+the refit arbiter still matches always_learned episode by episode:
+
+<!-- paired: paired_refit -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_arbiter vs always_learned | 900 | 5 | 7 | 0.77 |
+<!-- /paired -->
+
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 
 Free-form code over the same skills, a single planner call, and planner plus structure

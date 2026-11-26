@@ -1,0 +1,16 @@
+{
+ "comparisons": [
+  {
+   "a": "learned_arbiter",
+   "b": "always_learned",
+   "episodes": 900,
+   "a_only": 5,
+   "b_only": 7,
+   "p": 0.7744140625,
+   "sources": [
+    "20261126-003116_eval",
+    "20261126-022601_eval"
+   ]
+  }
+ ]
+}

@@ -272,3 +272,8 @@ def test_paired_comparison_counts_discordant_episodes(tmp_path):
     add_comparison("cmp", comp, tmp_path)
     out = render("<!-- paired: cmp -->\n<!-- /paired -->", tmp_path)
     assert "| a vs b | 10 | 8 | 0 |" in out and render(out, tmp_path) == out
+    (tmp_path / "later").mkdir()                 # a later run's "a" replaces the first run's
+    (tmp_path / "later" / "episodes.jsonl").write_text("".join(
+        json.dumps({**r, "success": True}) + "\n" for r in rows if r["method"] == "a"))
+    later = paired([str(tmp_path / "run"), str(tmp_path / "later")], "a", "b")
+    assert (later["a_only"], later["b_only"]) == (9, 0)

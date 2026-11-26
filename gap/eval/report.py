@@ -152,7 +152,8 @@ def publish(label: str, run_dirs: list[str], results_dir: Path = RESULTS) -> Pat
 
 def paired(run_dirs: list[str], a: str, b: str) -> dict:
     """Compare methods a and b on the episodes both ran (same split, task, seed); evaluation
-    is deterministic, so these are the same scenes."""
+    is deterministic, so these are the same scenes. As in publish, a method's episodes in a
+    later run replace an earlier run's (e.g. a refit arbiter against an older run's rows)."""
     rows = [r for d in run_dirs for r in read_jsonl(Path(d) / "episodes.jsonl")]
     ok = {m: {(r["split"], r["task"], r["seed"]): r["success"] for r in rows if r["method"] == m}
           for m in (a, b)}
