@@ -95,7 +95,8 @@ grasp only if its predicted success beats the skill's by more than m; all splits
 grasp takes a cube off a cube, outside the learned grasp's demonstrations; arbiter refit on
 place, stack and invert paired states; `arbiter_fallback` runs the arbiter's choice first and
 the other executor after a failed grasp, as `fallback_on_failure` does with the skill first;
-episode-matched sign tests below the table):
+`learned_retry`, its control, runs the learned grasp again after a failure; episode-matched
+sign tests below the table):
 
 <!-- table: eval_arbiter_invert -->
 | method | nominal | pose | object | distractors |
@@ -157,10 +158,9 @@ zones; the invert-refit arbiter with no unstack data):
 | fallback_on_failure vs learned_arbiter | 300 | 36 | 12 | 0.00072 |
 <!-- /paired -->
 
-**A second try inside the grasp node** (place, stack, sort; refit arbiter; `learned_retry`
-runs the learned grasp again after a failure, the control for `arbiter_fallback`'s switch;
-here the switch adds nothing over a plain retry, while on unstack it does; paired tests in
-the write-up):
+**A second try inside the grasp node** (place, stack, sort; refit arbiter; here switching
+executor after a failure adds nothing over retrying the learned grasp, while on unstack it
+does; paired tests in the write-up):
 
 <!-- table: eval_arbiter_refit methods=always_skill,always_learned,fallback_on_failure,learned_arbiter,arbiter_fallback,learned_retry -->
 | method | nominal | pose | object | distractors | heldout_task |
