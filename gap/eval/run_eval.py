@@ -14,6 +14,8 @@ Methods:
                                     arbiter graphs (--models <train_arbiter run>)
   <graph method>+<policy>           a graph method run under an arbitration policy, e.g.
                                     graph_loop+learned_arbiter
+  graph_retry+<policy>              the arbiter graphs plus a fail edge from each grasp node
+                                    (gap.arbiter.policies.retry_graph), under a policy
   learned_arbiter@<margin>          the arbiter picks the learned grasp only if its predicted
                                     success beats the skill's by more than the margin
 The camera noise model is on for every method unless --clean-camera. Every policy runs with
@@ -31,7 +33,7 @@ from pathlib import Path
 import numpy as np
 
 from gap.arbiter.fallback import SKILL_TYPE
-from gap.arbiter.policies import POLICIES, arbiter_graph
+from gap.arbiter.policies import POLICIES, arbiter_graph, retry_graph
 from gap.eval.splits import SPLITS
 from gap.graph.schema import Graph
 from gap.rehearsal.runner import map_jobs, rehearse, with_rgbd
@@ -93,6 +95,8 @@ def _run_method(method, task, insts, noise, args, run):
     if is_policy:
         return _rehearse(arbiter_graph(task), insts, noise, (base, args.models))
     policy = (arb, args.models) if arb else None
+    if base == "graph_retry":
+        return _rehearse(retry_graph(task), insts, noise, policy or ("always_skill", args.models))
     if base == "graph_loop":
         graph = _loop_graph(args.loop_runs, task)
         if graph is None:   # the planner never produced a valid graph for this task

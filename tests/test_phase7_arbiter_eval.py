@@ -304,3 +304,15 @@ def test_paired_comparison_counts_discordant_episodes(tmp_path):
         json.dumps({**r, "success": True}) + "\n" for r in rows if r["method"] == "a"))
     later = paired([str(tmp_path / "run"), str(tmp_path / "later")], "a", "b")
     assert (later["a_only"], later["b_only"]) == (9, 0)
+
+
+def test_retry_graph_adds_a_fail_edge_from_every_grasp_node():
+    from gap.arbiter.policies import arbiter_graph, retry_graph
+    from gap.graph.validate import validate
+    for task in ("place", "unstack"):
+        g, base = retry_graph(task), arbiter_graph(task)
+        closes = [n.id for n in g.nodes if n.skill == "close_gripper"]
+        new = [e for e in g.edges if e not in base.edges]
+        assert sorted(e.src for e in new) == sorted(closes)
+        assert all(e.on == "fail" and e.to.startswith("find") for e in new)
+        assert not validate(g)

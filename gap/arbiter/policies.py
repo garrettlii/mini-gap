@@ -29,7 +29,7 @@ import numpy as np
 
 from gap.arbiter.fallback import SKILL_TYPE, mode_of, observe
 from gap.graph.edits import SetParam, apply_edit
-from gap.graph.schema import Graph
+from gap.graph.schema import Edge, Graph
 from gap.skills import registry
 
 POLICIES = ("always_skill", "always_learned", "validity_only",
@@ -47,6 +47,17 @@ def arbiter_graph(task: str) -> Graph:
             g = apply_edit(g, SetParam(node=n.id, param="width_min", value=WIDTH_BAND[0]))
             g = apply_edit(g, SetParam(node=n.id, param="width_max", value=WIDTH_BAND[1]))
     return g
+
+
+def retry_graph(task: str) -> Graph:
+    """arbiter_graph plus a fail edge from each grasp node back to the node its grasp check
+    retries from (DECISIONS 2026-11-26, grasp-node fail edges): a failed close re-locates,
+    re-plans and re-approaches instead of ending the episode."""
+    g = arbiter_graph(task)
+    ids = [n.id for n in g.nodes]
+    extra = [Edge(src=ids[ids.index(e.src) - 1], to=e.to, on="fail", max_retries=e.max_retries)
+             for e in g.edges if e.on == "fail" and g.nodes[ids.index(e.src) - 1].skill == "close_gripper"]
+    return g.model_copy(update={"edges": [*g.edges, *extra]})
 
 
 def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed: int = 0,

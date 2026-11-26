@@ -393,3 +393,25 @@ splits) before making it. Format: date, decision, why, what it affects.
   exactly, no reset raised, every rate rose within the expected bound, and no unstack
   comparison changed direction or crossed p = 0.05 (results/eval_arbiter_unstack,
   paired_unstack, retry_unstack).
+
+## 2026-11-26: Fail edges from grasp nodes (graph_retry)
+- Why: in the reference graphs a failed close ends the episode; the only retry edges start
+  at the grasp check. The second try inside the node helped on every task, so the graph-level
+  alternative deserves a test: a fail edge from each close node back to the find node its
+  check retries from (same budget, max_retries 2). A failed grasp then re-locates the
+  object, re-plans and re-approaches, where the in-node second try grasps again from
+  wherever the failure left the hand.
+- Method `graph_retry+<policy>` (run_eval; gap.arbiter.policies.retry_graph). Policies
+  always_learned, learned_arbiter, arbiter_fallback; refit arbiter
+  (runs/20261126-020348_train_arbiter); place, stack, invert, unstack on nominal, pose,
+  object, and sort on heldout_task; eval seeds. Baselines are the existing rows on the same
+  seeds (evaluation is deterministic).
+- A dev smoke test (20 seeds each on place and unstack nominal) ran before this entry to
+  check the edges execute; it showed graph_retry+always_learned no better than learned_retry.
+- Expected, written before the eval run (episode-matched sign tests, pooled over cells):
+  1. graph_retry+always_learned beats always_learned.
+  2. graph_retry+always_learned does not beat learned_retry (the re-approach costs time and
+     the in-node retry already recovers most failures).
+  3. graph_retry+arbiter_fallback beats arbiter_fallback (the two budgets add).
+  4. graph_retry+learned_arbiter beats graph_retry+always_learned on invert and unstack and
+     ties on the table tasks, as without the edges.
