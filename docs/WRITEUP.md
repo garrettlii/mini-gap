@@ -535,15 +535,18 @@ executor. The instruction split uses paraphrased instructions.
 | graph_multi+learned_arbiter | 0.20 [0.15, 0.26] (40/200) | 0.20 [0.15, 0.26] (39/200) | 0.03 [0.01, 0.06] (6/200) | 0.20 [0.15, 0.27] (41/200) | 0.17 [0.12, 0.23] (34/200) | 0.00 [0.00, 0.04] (0/100) |
 <!-- /table -->
 
-The same runs by task:
+The same runs by task, with two more rows that give the graph_multi grasp nodes a second
+try (Section 5.1):
 
-<!-- table: eval_methods by=task methods=code,graph_single,graph_multi,graph_multi+learned_arbiter -->
+<!-- table: eval_methods by=task methods=code,graph_single,graph_multi,graph_multi+learned_arbiter,graph_multi+arbiter_fallback,graph_multi+learned_retry -->
 | method | place | stack | sort |
 |---|---|---|---|
 | code | 0.09 [0.07, 0.12] (44/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
 | graph_single | 0.16 [0.13, 0.19] (79/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
 | graph_multi | 0.16 [0.13, 0.19] (79/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
 | graph_multi+learned_arbiter | 0.32 [0.28, 0.36] (160/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi+arbiter_fallback | 0.33 [0.29, 0.37] (163/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi+learned_retry | 0.33 [0.29, 0.37] (163/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
 <!-- /table -->
 
 The 4B model's first drafts are far below the reference graphs of Section 5.1, and none of
@@ -560,7 +563,10 @@ graph_multi agree on every evaluation episode. Handing grasps to the learned pol
 place graphs that already reach the cube
 (<!-- rate: eval_methods graph_multi nominal place -->0.19 [0.13, 0.28] (19/100)<!-- /rate --> to
 <!-- rate: eval_methods graph_multi+learned_arbiter nominal place -->0.40 [0.31, 0.50] (40/100)<!-- /rate --> on
-nominal) and cannot help graphs that fail before the grasp. The object split is the
+nominal) and cannot help graphs that fail before the grasp. A second try inside the grasp
+node changes almost nothing either (a few place episodes, against graph_multi with the
+arbiter; we had expected a clear lift on place): the drafted graphs rarely fail at the grasp
+itself, but at the zone lookup, the reach, or the verification. The object split is the
 exception: the planner's verify nodes accept only finger widths that fit the 4 cm cube, so
 they reject the learned policy's successful grasps of the 3 cm and 5 cm variants (the
 reference graphs of Section 5.1 use a band that admits every variant).
