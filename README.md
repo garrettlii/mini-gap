@@ -93,7 +93,9 @@ grasp only if its predicted success beats the skill's by more than m; all splits
 
 **Grasping off a stack** (invert: green starts on red, red must end on green; the first
 grasp takes a cube off a cube, outside the learned grasp's demonstrations; arbiter refit on
-place, stack and invert paired states; episode-matched sign tests below the table):
+place, stack and invert paired states; `arbiter_fallback` runs the arbiter's choice first and
+the other executor after a failed grasp, as `fallback_on_failure` does with the skill first;
+episode-matched sign tests below the table):
 
 <!-- table: eval_arbiter_invert -->
 | method | nominal | pose | object | distractors |
@@ -104,6 +106,7 @@ place, stack and invert paired states; episode-matched sign tests below the tabl
 | fallback_on_failure | 0.56 [0.46, 0.65] (56/100) | 0.65 [0.55, 0.74] (65/100) | 0.50 [0.40, 0.60] (50/100) | 0.57 [0.47, 0.66] (57/100) |
 | learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
 | oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
+| arbiter_fallback | 0.69 [0.59, 0.77] (69/100) | 0.77 [0.68, 0.84] (77/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
 <!-- /table -->
 
 <!-- sweep: arbiter_margin_invert methods=always_skill,always_learned,learned_arbiter,learned_arbiter@0.1,learned_arbiter@0.3 -->
@@ -123,6 +126,33 @@ place, stack and invert paired states; episode-matched sign tests below the tabl
 | learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
 | learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
 | learned_arbiter@0.1 vs always_learned | 400 | 34 | 17 | 0.024 |
+| arbiter_fallback vs fallback_on_failure | 400 | 84 | 26 | 2.6e-08 |
+| arbiter_fallback vs learned_arbiter | 400 | 56 | 0 | 2.8e-17 |
+<!-- /paired -->
+
+**A taller stack the arbiter never saw** (unstack: a blue-green-red tower sorted into the
+zones; the invert-refit arbiter with no unstack data):
+
+<!-- table: eval_arbiter_unstack -->
+| method | nominal | pose | object |
+|---|---|---|---|
+| always_skill | 0.42 [0.33, 0.52] (42/100) | 0.52 [0.42, 0.62] (52/100) | 0.26 [0.18, 0.35] (26/100) |
+| always_learned | 0.47 [0.38, 0.57] (47/100) | 0.52 [0.42, 0.62] (52/100) | 0.34 [0.25, 0.44] (34/100) |
+| validity_only | 0.54 [0.44, 0.63] (54/100) | 0.57 [0.47, 0.66] (57/100) | 0.30 [0.22, 0.40] (30/100) |
+| fallback_on_failure | 0.66 [0.56, 0.75] (66/100) | 0.71 [0.61, 0.79] (71/100) | 0.39 [0.30, 0.49] (39/100) |
+| learned_arbiter | 0.55 [0.45, 0.64] (55/100) | 0.61 [0.51, 0.70] (61/100) | 0.36 [0.27, 0.46] (36/100) |
+| oracle | 0.67 [0.57, 0.75] (67/100) | 0.72 [0.63, 0.80] (72/100) | 0.38 [0.29, 0.48] (38/100) |
+| arbiter_fallback | 0.71 [0.61, 0.79] (71/100) | 0.72 [0.63, 0.80] (72/100) | 0.37 [0.28, 0.47] (37/100) |
+<!-- /table -->
+
+<!-- paired: paired_unstack -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_arbiter vs always_learned | 300 | 31 | 12 | 0.0054 |
+| learned_arbiter vs always_skill | 300 | 48 | 16 | 7.7e-05 |
+| arbiter_fallback vs fallback_on_failure | 300 | 24 | 20 | 0.65 |
+| arbiter_fallback vs learned_arbiter | 300 | 28 | 0 | 7.5e-09 |
+| fallback_on_failure vs learned_arbiter | 300 | 36 | 12 | 0.00072 |
 <!-- /paired -->
 
 **Policy authoring** (graphs and code written by the local 4B model, one per task and

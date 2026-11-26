@@ -263,9 +263,54 @@
    "grasp_s": 86.18,
    "grasps": 170,
    "skill_grasps": 116
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "nominal",
+   "task": "invert",
+   "successes": 69,
+   "n": 100,
+   "mean_sim_s": 19.270599999998552,
+   "grasp_s": 143.0,
+   "grasps": 169,
+   "skill_grasps": 35
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "pose",
+   "task": "invert",
+   "successes": 77,
+   "n": 100,
+   "mean_sim_s": 20.388399999998356,
+   "grasp_s": 170.72,
+   "grasps": 174,
+   "skill_grasps": 43
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "object",
+   "task": "invert",
+   "successes": 65,
+   "n": 100,
+   "mean_sim_s": 22.436199999998074,
+   "grasp_s": 170.98,
+   "grasps": 193,
+   "skill_grasps": 35
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "distractors",
+   "task": "invert",
+   "successes": 75,
+   "n": 100,
+   "mean_sim_s": 19.87579999999848,
+   "grasp_s": 154.48,
+   "grasps": 176,
+   "skill_grasps": 39
   }
  ],
  "sources": [
-  "20261126-020858_eval"
+  "20261126-020858_eval",
+  "20261126-030409_eval"
  ]
 }

@@ -44,6 +44,30 @@
     "20261126-020858_eval",
     "20261126-023215_eval"
    ]
+  },
+  {
+   "a": "arbiter_fallback",
+   "b": "fallback_on_failure",
+   "episodes": 400,
+   "a_only": 84,
+   "b_only": 26,
+   "p": 2.6140393458029345e-08,
+   "sources": [
+    "20261126-020858_eval",
+    "20261126-030409_eval"
+   ]
+  },
+  {
+   "a": "arbiter_fallback",
+   "b": "learned_arbiter",
+   "episodes": 400,
+   "a_only": 56,
+   "b_only": 0,
+   "p": 2.7755575615628914e-17,
+   "sources": [
+    "20261126-020858_eval",
+    "20261126-030409_eval"
+   ]
   }
  ]
 }

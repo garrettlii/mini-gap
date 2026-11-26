@@ -267,9 +267,9 @@ always_learned within a few episodes on every split. The shared failures are not
 far-off starts: in the paired data they come with smaller closing-axis offsets than the
 states only the learned grasp wins, and with less of the top face in view.
 
-So in this workcell the scripted close almost never wins on success, even against a learned grasp
-that must find the object itself. Its advantage is time: it closes at once, while the learned
-grasp servos first.
+So when every cube starts on the table, the scripted close almost never wins on success, even
+against a learned grasp that must find the object itself. Its advantage is time: it closes at
+once, while the learned grasp servos first. Tasks that start from a stack change this (below).
 
 **Time-aware arbitration.** The arbiter picks the learned grasp only when its predicted
 success beats the skill's by more than a margin, so a larger margin hands more grasps to the
@@ -325,6 +325,7 @@ Invert, evaluation seeds, camera noise on, the refit arbiter:
 | fallback_on_failure | 0.56 [0.46, 0.65] (56/100) | 0.65 [0.55, 0.74] (65/100) | 0.50 [0.40, 0.60] (50/100) | 0.57 [0.47, 0.66] (57/100) |
 | learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
 | oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
+| arbiter_fallback | 0.69 [0.59, 0.77] (69/100) | 0.77 [0.68, 0.84] (77/100) | 0.65 [0.55, 0.74] (65/100) | 0.75 [0.66, 0.82] (75/100) |
 <!-- /table -->
 
 Matched episode by episode (same split and seed; the sign test counts the episodes only one
@@ -337,6 +338,8 @@ of the two policies solved):
 | learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
 | learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
 | learned_arbiter@0.1 vs always_learned | 400 | 34 | 17 | 0.024 |
+| arbiter_fallback vs fallback_on_failure | 400 | 84 | 26 | 2.6e-08 |
+| arbiter_fallback vs learned_arbiter | 400 | 56 | 0 | 2.8e-17 |
 <!-- /paired -->
 
 Here the arbiter beats both single executors. In a dev-seed check, the grasps it gives the
@@ -344,6 +347,16 @@ scripted close are almost all the stacked one, and in the evaluation episodes it
 failures at the stacked grasp than always_learned. It does not beat fallback_on_failure,
 which runs the skill and, after a failed grasp, the learned one within the same node visit:
 the two solve different episodes, and the counts are close to even.
+
+That compares one choice against a choice plus a retry. arbiter_fallback gives the arbiter
+the same second try: its choice first and, after a failed grasp, the other executor from the
+state the failure left. It was defined after seeing the rows above (DECISIONS), with nothing
+tuned on invert, and it beats fallback_on_failure by a wide margin in the paired table. The
+failure breakdown points to the placement: invert ends in a stack, and episodes in which
+every node passes but the final stack check fails are common for the policies that start
+with the scripted close on the cube resting on the table, and rare for arbiter_fallback,
+which sends that grasp to the learned policy. The scripted close grasps off center, and the
+offset carries into where the cube lands.
 
 On invert the margin no longer trades success for speed at small values. Same margin grid as
 above, all four splits pooled:
@@ -416,13 +429,15 @@ fallback_on_failure gets.
 <!-- /sweep -->
 
 The rule transfers: on a task it never saw, the arbiter again beats both single executors
-episode by episode, and runs faster grasps than always_learned. But a second try is worth
-more than the choice. fallback_on_failure is ahead of the arbiter here, and giving the
-arbiter the same second try lifts it to fallback_on_failure's level without passing it:
-the episode-matched counts are close to even, so there is no evidence that the arbiter's
-ordering adds success once both policies may retry with the other executor. It costs time,
-since the arbiter often starts with the slower learned grasp. (arbiter_fallback never loses
-an episode to learned_arbiter, as expected: the second executor runs only after a failure.)
+episode by episode, and runs faster grasps than always_learned. A second try is worth more
+than the choice here: fallback_on_failure is ahead of the arbiter, and giving the arbiter the
+same second try lifts it to fallback_on_failure's level without passing it. This was the
+pre-registered test of arbiter_fallback, and the episode-matched counts are close to even,
+so on unstack there is no evidence that the arbiter's ordering adds success once both
+policies may retry with the other executor; it costs time, since the arbiter often starts
+with the slower learned grasp. Unlike invert, unstack ends with cubes in zones, not on a
+stack, so a grasp off center does not spoil the placement. (arbiter_fallback never loses an
+episode to learned_arbiter, as expected: the second executor runs only after a failure.)
 
 Some object-split towers (a cylinder stacked with a 3 cm cube) sink more than the reset's
 settle check allows. Those episodes end before the first node and count as failures for
