@@ -1,9 +1,10 @@
 """Learned fallback executors, one per manipulation node type.
 
 Implemented: grasp (close_gripper nodes). A closed-loop MLP (sklearn), behavior-cloned from a
-privileged servo demonstrator on rehearsal seeds. It sees the nearest object from the hand
-(gap.skills._common.hand_offsets plus wrist-camera noise; a privileged stand-in for a wrist
-camera) and outputs a hand-frame velocity (closing axis, width axis, up, yaw) and a close
+privileged servo demonstrator on rehearsal seeds. Two observation modes: "privileged" sees the
+nearest object from the hand (gap.skills._common.hand_offsets plus small noise; a stand-in for
+a wrist camera), "wrist" has to find it in the wrist RGB-D image (gap.arbiter.wrist). It
+outputs a hand-frame velocity (closing axis, width axis, up, yaw) and a close
 command. A damped-least-squares Jacobian step turns the velocity into joint targets, the way
 end-effector-delta policies run on real arms. Once it commands close (or its time runs out)
 it closes like close_gripper. The node's post-check judges it like the skill.
@@ -19,6 +20,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from gap.arbiter.wrist import observe_wrist
 from gap.sim import model_builder as mb
 from gap.sim.motion import heading, move_tcp, set_gripper
 from gap.skills._common import hand_offsets
@@ -38,8 +40,11 @@ OBS_KEYS = ("close_axis", "width_axis", "dz", "yaw", "half", "round")
 ACT_SCALE = np.array([V_XY, V_XY, V_Z, W_YAW, 1.0])
 
 
-def observe(cell, rng: np.random.Generator) -> np.ndarray:
-    """[close_axis, width_axis, dz, yaw, half, round, gripper width, tcp height]."""
+def observe(cell, rng: np.random.Generator, mode: str = "privileged") -> np.ndarray:
+    """[close_axis, width_axis, dz, yaw, half, round, gripper width, tcp height]; the wrist
+    mode appends `seen` (gap.arbiter.wrist)."""
+    if mode == "wrist":
+        return observe_wrist(cell, rng)
     off = hand_offsets(cell)
     x = np.array([off[k] for k in OBS_KEYS], dtype=float)
     x[:4] += rng.normal(0.0, OBS_SD)
@@ -58,9 +63,10 @@ def demonstrator(obs: np.ndarray) -> np.ndarray:
 
 
 class FallbackPolicy:
-    def __init__(self, node_type: str = "grasp"):
+    def __init__(self, node_type: str = "grasp", obs_mode: str = "privileged"):
         assert node_type in NODE_TYPES
         self.node_type = node_type
+        self.obs_mode = obs_mode
         self.model = make_pipeline(StandardScaler(), MLPRegressor(
             hidden_layer_sizes=(64, 64), max_iter=400, early_stopping=True, random_state=0))
 
@@ -76,20 +82,27 @@ class FallbackPolicy:
 
     def run(self, cell, params: dict, rng: np.random.Generator) -> SkillResult:
         """The learned grasp: servo with the MLP until it says close, then close."""
-        return servo_and_close(cell, params, lambda obs: self.act(obs), rng)
+        return servo_and_close(cell, params, self.act, rng, mode=mode_of(self))
+
+
+def mode_of(policy) -> str:
+    return getattr(policy, "obs_mode", "privileged")   # policies pickled before wrist mode
 
 
 def servo_and_close(cell, params: dict, policy, rng: np.random.Generator,
-                    record: list | None = None, act_noise: float = 0.0) -> SkillResult:
+                    record: list | None = None, act_noise: float = 0.0,
+                    mode: str = "privileged") -> SkillResult:
     """Closed loop: observe -> policy -> joint targets, until close > 0.5 or MAX_CTRL.
-    record (demos) collects (obs, demonstrator action); act_noise perturbs the executed action."""
+    policy=None runs the demonstrator on the privileged view; record (demos) collects
+    (observation in `mode`, demonstrator action); act_noise perturbs the executed action."""
     ctrl = cell.data.ctrl.copy()
     ctrl[7] = mb.GRIPPER_OPEN_CTRL
     for _ in range(MAX_CTRL):
-        obs = observe(cell, rng)
-        a = policy(obs)
+        obs = observe(cell, rng, mode)
+        teacher = obs if mode == "privileged" else observe(cell, rng)
+        a = demonstrator(teacher) if policy is None else policy(obs)
         if record is not None:
-            record.append((obs, demonstrator(obs)))
+            record.append((obs, demonstrator(teacher)))
         if a[4] > 0.5:
             break
         a = a + rng.normal(0.0, act_noise, 5) if act_noise else a
@@ -131,29 +144,32 @@ def demo_start(cell, cube: str, rng: np.random.Generator) -> bool:
         np.linalg.norm(np.subtract(cell.get_state()["tcp"].pos, grasp.pos)) < 0.005
 
 
-def collect_demos(seeds: list[int], workers: int = 6) -> tuple[np.ndarray, np.ndarray, float]:
+def collect_demos(seeds: list[int], workers: int = 6,
+                  mode: str = "privileged") -> tuple[np.ndarray, np.ndarray, float]:
     """(X, Y, demonstrator success rate) from demonstrator grasps on rehearsal seeds, half on
-    the nominal cube and half on the object variants, with DART-style action noise."""
+    the nominal cube and half on the object variants, with DART-style action noise. X holds
+    the observation in `mode`; the demonstrator always acts on the privileged view."""
     from gap.rehearsal.runner import map_jobs
-    out = map_jobs(_demo_job, seeds, workers)
+    out = map_jobs(_demo_job, [(s, mode) for s in seeds], workers)
     pairs = [p for rec, _ in out for p in rec]
     X, Y = np.array([o for o, _ in pairs]), np.array([a for _, a in pairs])
     return X, Y, float(np.mean([ok for rec, ok in out if rec]))
 
 
-def _demo_job(seed: int):
+def _demo_job(job):
     from gap.rehearsal.runner import worker_cell
     from gap.sim.task_sampler import sample
     from gap.skills.grasp import CloseGripper
+    seed, mode = job
     rng = np.random.default_rng([seed, 11])
     task = ("place", "stack")[seed % 2]
     inst = sample(task, seed, "object" if (seed // 2) % 2 else "nominal")
-    cell = worker_cell()
+    cell = worker_cell(camera_noise=mode == "wrist")   # demos see the deployed wrist camera
     cell.reset(inst)
     cube = str(rng.choice([c for c in mb.CUBES if f"{c}_x" in inst.features]))
     if not demo_start(cell, cube, rng):
         return [], False
     record: list = []
     params = CloseGripper().resolve_params({})
-    servo_and_close(cell, params, demonstrator, rng, record=record, act_noise=0.3)
+    servo_and_close(cell, params, None, rng, record=record, act_noise=0.3, mode=mode)
     return record, CloseGripper().post(cell, {}, {}, params)[0]

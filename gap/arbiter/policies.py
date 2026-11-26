@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-from gap.arbiter.fallback import SKILL_TYPE, observe
+from gap.arbiter.fallback import SKILL_TYPE, mode_of, observe
 from gap.graph.edits import SetParam, apply_edit
 from gap.graph.schema import Graph
 from gap.skills import registry
@@ -44,7 +44,9 @@ def arbiter_graph(task: str) -> Graph:
     return g
 
 
-def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed: int = 0):
+def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed: int = 0,
+                obs_mode: str = "privileged"):
+    """obs_mode: what the arbiter sees, the learned grasp's own observation."""
     assert name in POLICIES, name
     rng = np.random.default_rng([seed, 23])
 
@@ -60,7 +62,7 @@ def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed
         if name == "fallback_on_failure":
             return "fallback"
         if name == "learned_arbiter":
-            return arbiter.choose(observe(cell, rng), margin)
+            return arbiter.choose(observe(cell, rng, obs_mode), margin)
         return "oracle"
     return policy
 
@@ -85,4 +87,5 @@ def load_models(models_dir: str) -> tuple:
 def executors(name: str, models_dir: str, graph: Graph, seed: int):
     """(executor_policy, learned_runner) for run_graph, models loaded once per process."""
     bc, arb = load_models(models_dir)
-    return make_policy(name, graph, arb, seed=seed), make_learned_runner(bc, seed)
+    return (make_policy(name, graph, arb, seed=seed, obs_mode=mode_of(bc)),
+            make_learned_runner(bc, seed))

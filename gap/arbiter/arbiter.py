@@ -14,14 +14,15 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 FEATURES = ("|close_axis|", "|width_axis|", "|dz|", "|yaw|", "half", "round",
-            "close_axis^2", "width_axis^2")
+            "close_axis^2", "width_axis^2", "seen")   # seen: wrist observations only
 
 
 def featurize(obs: np.ndarray) -> np.ndarray:
     """fallback.observe() vector(s) -> arbiter features (rows)."""
     obs = np.atleast_2d(obs)
     ca, wa, dz, yaw, half, round_ = obs[:, :6].T
-    return np.c_[np.abs(ca), np.abs(wa), np.abs(dz), np.abs(yaw), half, round_, ca**2, wa**2]
+    F = np.c_[np.abs(ca), np.abs(wa), np.abs(dz), np.abs(yaw), half, round_, ca**2, wa**2]
+    return np.c_[F, obs[:, 8]] if obs.shape[1] > 8 else F
 
 
 class Arbiter:

@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from gap.arbiter.fallback import SKILL_TYPE, observe
+from gap.arbiter.fallback import SKILL_TYPE, mode_of, observe
 from gap.arbiter.policies import arbiter_graph, load_models
 from gap.utils.seeds import rehearsal_seeds
 
@@ -56,7 +56,7 @@ def _job(job) -> list[dict]:
         if node.skill not in SKILL_TYPE:
             return "skill"
         skill = registry.get(node.skill)()
-        snap, obs = cell.snapshot(), observe(cell, rng)
+        snap, obs = cell.snapshot(), observe(cell, rng, mode_of(bc))
         row = {"task": task, "seed": seed, "split": split, "node": node_id, "obs": obs.tolist(),
                "valid": skill.pre(cell, {}, skill.resolve_params(node.params))[0]}
         for kind in ("skill", "learned"):

@@ -230,3 +230,31 @@ splits) before making it. Format: date, decision, why, what it affects.
   the headless-GL skip in test_phase0_env), marked with a reasoned noqa.
 - RUF012 is ignored for gap/skills: a skill's inputs/outputs/params are class-level
   declarations already typed ClassVar on Skill in base.py; ruff does not see the base class.
+
+## 2026-11-26: A learned grasp that sees through the wrist camera
+- Why: the learned grasp reads true hand-object offsets, so it weakly dominates the scripted
+  close and the arbiter has nothing to choose (2026-11-24 entries). A learned executor that
+  must find the object in its own camera image has failure modes the scripted skill does not
+  share. The privileged executor and its results stay as they are.
+- Observation, every control step: render the model's wrist camera (on the hand, 6 cm off
+  the finger axis, looking down, 75 deg field of view) as RGB-D; segment each cube color with
+  the RGB-D locator's HSV mask; back-project through the calibrated hand-eye pose; keep points
+  within 5 mm of the highest one (the top face); drop blobs whose top is under 1 cm (the cyan
+  zone and the blue floor pass the color mask); take the blob nearest the TCP. From it:
+  offsets along the closing and width axes, height, yaw off square, half height (top height /
+  2), roundness (top-face fill of its bounding square below 0.9), and `seen` (visible top-face
+  area over a full square face). Nothing found: zeros. Same layout as the privileged
+  observation plus `seen`.
+- Noise (camera_noise on): per-episode hand-eye calibration error, 0.5 deg rotation and 2 mm
+  translation per axis (a short rigid mount, so less translation than the overhead camera's
+  5 mm), and the same depth noise model. Separate random streams, so the overhead camera's
+  noise and all earlier results are unchanged.
+- Not modeled: a minimum depth range. Short-range depth cameras lose depth below about 7 cm,
+  and at grasp height the top face is 5-6 cm from this camera. Listed as a limitation.
+- Demonstrations run with camera noise on, as deployed. The privileged demonstrator still
+  chooses the actions; the student is fit on its own wrist observation at each step.
+- The arbiter's features come from the same wrist observation (available at run time), plus
+  `seen`.
+- `train_arbiter.py --obs wrist`. The pickled policy carries its observation mode, so paired
+  data, the arbiter and run_eval use the matching observation.
+- All parameters above were fixed before any wrist-executor result was seen.

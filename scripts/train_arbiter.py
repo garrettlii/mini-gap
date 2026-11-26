@@ -34,11 +34,13 @@ def main() -> None:
     ap.add_argument("--demos", type=int, default=600)
     ap.add_argument("--paired", type=int, default=200, help="instances per task")
     ap.add_argument("--tasks", default="place,stack")
+    ap.add_argument("--obs", choices=["privileged", "wrist"], default="privileged",
+                    help="what the learned grasp sees (DECISIONS 2026-11-26)")
     args = ap.parse_args()
     run = RunDir("train_arbiter", vars(args))
 
-    X, Y, demo_ok = collect_demos(rehearsal_seeds(args.demos, BC_SEED_OFFSET))
-    bc = FallbackPolicy("grasp").fit(X, Y)
+    X, Y, demo_ok = collect_demos(rehearsal_seeds(args.demos, BC_SEED_OFFSET), mode=args.obs)
+    bc = FallbackPolicy("grasp", obs_mode=args.obs).fit(X, Y)
     run.file("bc_grasp.pkl").write_bytes(pickle.dumps(bc))
     print(f"demos: {len(X)} steps, demonstrator success {demo_ok:.2f}", flush=True)
 
@@ -63,7 +65,8 @@ def _coefficients(arb: Arbiter) -> dict:
     out = {}
     for key, m in arb.models.items():
         if not isinstance(m, float):
-            out[key] = dict(zip(FEATURES, m[-1].coef_[0].round(3).tolist(), strict=True))
+            coef = m[-1].coef_[0].round(3).tolist()
+            out[key] = dict(zip(FEATURES[:len(coef)], coef, strict=True))
     return out
 
 

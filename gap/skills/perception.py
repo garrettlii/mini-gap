@@ -102,18 +102,26 @@ def _rgb_to_hsv(rgb: np.ndarray) -> np.ndarray:
     return np.stack([h, sat, mx], -1)
 
 
-def _mask_to_pose(cell, mask: np.ndarray, depth: np.ndarray) -> Pose:
-    """Back-project masked pixels through the overhead pinhole camera; yaw from the outline."""
-    m = cell.model
-    cam = m.camera("overhead").id
+def back_project(cell, camera: str, mask: np.ndarray, depth: np.ndarray) -> np.ndarray:
+    """World points (N, 3) of the masked pixels, through the camera's calibrated pinhole model
+    (nominal pose: any calibration error stays in the estimate)."""
     h, w = mask.shape
-    f = 0.5 * h / np.tan(np.deg2rad(m.cam_fovy[cam]) / 2)
+    f = focal_px(cell, camera, h)
     v, u = np.nonzero(mask)
     z = depth[v, u]
     # Camera frame: x right, y up, looking along -z.
     pts_cam = np.stack([(u - w / 2 + 0.5) * z / f, -(v - h / 2 + 0.5) * z / f, -z], -1)
-    cam_pos, R = cell.calibrated_camera("overhead")   # nominal pose: calibration error stays
-    pts = pts_cam @ R.T + cam_pos
+    cam_pos, R = cell.calibrated_camera(camera)
+    return pts_cam @ R.T + cam_pos
+
+
+def focal_px(cell, camera: str, height: int) -> float:
+    return 0.5 * height / np.tan(np.deg2rad(cell.model.camera(camera).fovy[0]) / 2)
+
+
+def _mask_to_pose(cell, mask: np.ndarray, depth: np.ndarray) -> Pose:
+    """Back-project masked pixels through the overhead pinhole camera; yaw from the outline."""
+    pts = back_project(cell, "overhead", mask, depth)
     top = pts[pts[:, 2] > pts[:, 2].max() - 0.01]     # keep the top face only
     center = top.mean(0) - np.array([0, 0, mb.CUBE_HALF])
     yaw = _square_yaw(top[:, :2] - top[:, :2].mean(0))

@@ -146,3 +146,33 @@ def test_loop_metrics_become_before_after_cells(tmp_path):
     cells = load_cells([str(tmp_path / "metrics.json")])
     assert [(c["method"], c["split"], c["successes"]) for c in cells] == \
         [("start_graph", "no_release", 0), ("after_loop", "no_release", 60)]
+
+
+def test_wrist_camera_calibration_error_only_with_noise():
+    from gap.sim.task_sampler import sample
+    from gap.sim.workcell import Workcell
+    for noise in (False, True):
+        c = Workcell(camera_noise=noise)
+        c.reset(sample("place", 50_001))
+        pos, _ = c.calibrated_camera("wrist")
+        err = np.linalg.norm(pos - c.data.cam_xpos[c.model.camera("wrist").id])
+        assert (err > 1e-4) == noise
+
+
+def test_wrist_observation_finds_the_cube(cell):
+    """Accurate while the top face is in view (hand raised); nothing found over bare table.
+    At grasp height the top face can leave the image: that is the executor's own failure."""
+    from gap.arbiter.fallback import demo_start, observe
+    from gap.arbiter.wrist import observe_wrist
+    from gap.sim.motion import move_tcp
+    from gap.sim.task_sampler import sample
+    from gap.types import Pose
+    cell.reset(sample("place", 50_002))
+    assert demo_start(cell, "red_cube", np.random.default_rng(0))
+    tcp = cell.get_state()["tcp"]
+    move_tcp(cell, tcp.offset(dz=0.06))
+    true, seen = observe(cell, np.random.default_rng(0)), observe_wrist(cell, None)
+    assert abs(true[0] - seen[0]) < 0.004 and abs(true[2] - seen[2]) < 0.004
+    assert seen[8] > 0
+    move_tcp(cell, Pose((0.3, -0.45, 0.3), tcp.quat))     # over bare table
+    assert observe_wrist(cell, None)[8] == 0.0
