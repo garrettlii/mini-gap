@@ -267,8 +267,33 @@ states only the learned grasp wins, and with less of the top face in view.
 
 So in this workcell the scripted close almost never wins on success, even against a learned grasp
 that must find the object itself. Its advantage is time: it closes at once, while the learned
-grasp servos first. An arbiter that weighs cycle time as well as success could give the
-states where both succeed back to the scripted close; we leave that to future work.
+grasp servos first.
+
+**Time-aware arbitration.** The arbiter picks the learned grasp only when its predicted
+success beats the skill's by more than a margin, so a larger margin hands more grasps to the
+faster skill. Wrist-camera executor, all five splits pooled; the margin grid was fixed in
+advance from the arbiter's training data and every margin is shown. Grasp time is simulated
+seconds inside grasp nodes per grasp-node visit.
+
+<!-- sweep: arbiter_margin -->
+| method | success | grasps by skill | s per grasp |
+|---|---|---|---|
+| always_skill | 0.46 [0.42, 0.49] (410/900) | 1.00 [1.00, 1.00] (963/963) | 0.26 |
+| always_learned | 0.78 [0.76, 0.81] (706/900) | 0.00 [0.00, 0.00] (0/1013) | 0.70 |
+| learned_arbiter | 0.78 [0.76, 0.81] (705/900) | 0.04 [0.03, 0.05] (37/1012) | 0.70 |
+| learned_arbiter@0.05 | 0.78 [0.75, 0.81] (703/900) | 0.11 [0.09, 0.13] (112/1012) | 0.68 |
+| learned_arbiter@0.1 | 0.77 [0.74, 0.80] (692/900) | 0.19 [0.16, 0.21] (189/1009) | 0.66 |
+| learned_arbiter@0.2 | 0.74 [0.71, 0.76] (663/900) | 0.33 [0.30, 0.36] (333/1008) | 0.60 |
+| learned_arbiter@0.3 | 0.69 [0.66, 0.72] (620/900) | 0.49 [0.45, 0.52] (486/1001) | 0.52 |
+| learned_arbiter@0.5 | 0.61 [0.58, 0.64] (550/900) | 0.70 [0.68, 0.73] (696/988) | 0.44 |
+<!-- /sweep -->
+
+Small margins (0.05 and 0.1) hand a tenth to a fifth of the grasps to the scripted close
+while pooled success stays inside always_learned's interval. Grasp time falls only a little,
+because the handed-over grasps are a minority and each saves only the gap between the two
+grasp times in the table. Larger margins buy more time at a steady cost in success. No margin
+beats always_learned on success, as expected when the skill alone almost never wins: on these
+tasks the margin is a speed dial, not a way to raise success.
 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 

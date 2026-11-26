@@ -3,114 +3,226 @@
   {
    "method": "skill_only",
    "split": "privileged/600",
-   "task": "all",
-   "n": 392,
+   "task": "place",
+   "n": 195,
    "successes": 0
   },
   {
    "method": "learned_only",
    "split": "privileged/600",
-   "task": "all",
-   "n": 392,
-   "successes": 184
+   "task": "place",
+   "n": 195,
+   "successes": 89
   },
   {
    "method": "both",
    "split": "privileged/600",
-   "task": "all",
-   "n": 392,
-   "successes": 203
+   "task": "place",
+   "n": 195,
+   "successes": 105
   },
   {
    "method": "neither",
    "split": "privileged/600",
-   "task": "all",
-   "n": 392,
-   "successes": 5
+   "task": "place",
+   "n": 195,
+   "successes": 1
+  },
+  {
+   "method": "skill_only",
+   "split": "privileged/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 95
+  },
+  {
+   "method": "both",
+   "split": "privileged/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 98
+  },
+  {
+   "method": "neither",
+   "split": "privileged/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 4
   },
   {
    "method": "skill_only",
    "split": "privileged/25",
-   "task": "all",
-   "n": 392,
+   "task": "place",
+   "n": 195,
    "successes": 0
   },
   {
    "method": "learned_only",
    "split": "privileged/25",
-   "task": "all",
-   "n": 392,
-   "successes": 154
+   "task": "place",
+   "n": 195,
+   "successes": 76
   },
   {
    "method": "both",
    "split": "privileged/25",
-   "task": "all",
-   "n": 392,
-   "successes": 203
+   "task": "place",
+   "n": 195,
+   "successes": 105
   },
   {
    "method": "neither",
    "split": "privileged/25",
-   "task": "all",
-   "n": 392,
-   "successes": 35
+   "task": "place",
+   "n": 195,
+   "successes": 14
+  },
+  {
+   "method": "skill_only",
+   "split": "privileged/25",
+   "task": "stack",
+   "n": 197,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/25",
+   "task": "stack",
+   "n": 197,
+   "successes": 78
+  },
+  {
+   "method": "both",
+   "split": "privileged/25",
+   "task": "stack",
+   "n": 197,
+   "successes": 98
+  },
+  {
+   "method": "neither",
+   "split": "privileged/25",
+   "task": "stack",
+   "n": 197,
+   "successes": 21
   },
   {
    "method": "skill_only",
    "split": "privileged/100",
-   "task": "all",
-   "n": 392,
+   "task": "place",
+   "n": 195,
    "successes": 0
   },
   {
    "method": "learned_only",
    "split": "privileged/100",
-   "task": "all",
-   "n": 392,
-   "successes": 179
+   "task": "place",
+   "n": 195,
+   "successes": 90
   },
   {
    "method": "both",
    "split": "privileged/100",
-   "task": "all",
-   "n": 392,
-   "successes": 203
+   "task": "place",
+   "n": 195,
+   "successes": 105
   },
   {
    "method": "neither",
    "split": "privileged/100",
-   "task": "all",
-   "n": 392,
+   "task": "place",
+   "n": 195,
+   "successes": 0
+  },
+  {
+   "method": "skill_only",
+   "split": "privileged/100",
+   "task": "stack",
+   "n": 197,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/100",
+   "task": "stack",
+   "n": 197,
+   "successes": 89
+  },
+  {
+   "method": "both",
+   "split": "privileged/100",
+   "task": "stack",
+   "n": 197,
+   "successes": 98
+  },
+  {
+   "method": "neither",
+   "split": "privileged/100",
+   "task": "stack",
+   "n": 197,
    "successes": 10
   },
   {
    "method": "skill_only",
    "split": "wrist/600",
-   "task": "all",
-   "n": 392,
-   "successes": 3
+   "task": "place",
+   "n": 195,
+   "successes": 2
   },
   {
    "method": "learned_only",
    "split": "wrist/600",
-   "task": "all",
-   "n": 392,
-   "successes": 131
+   "task": "place",
+   "n": 195,
+   "successes": 61
   },
   {
    "method": "both",
    "split": "wrist/600",
-   "task": "all",
-   "n": 392,
-   "successes": 200
+   "task": "place",
+   "n": 195,
+   "successes": 103
   },
   {
    "method": "neither",
    "split": "wrist/600",
-   "task": "all",
-   "n": 392,
-   "successes": 58
+   "task": "place",
+   "n": 195,
+   "successes": 29
+  },
+  {
+   "method": "skill_only",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 1
+  },
+  {
+   "method": "learned_only",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 70
+  },
+  {
+   "method": "both",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 97
+  },
+  {
+   "method": "neither",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 29
   }
  ],
  "sources": [

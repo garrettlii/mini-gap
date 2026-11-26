@@ -74,6 +74,22 @@ its own RGB-D image instead of reading its true offset; arbiter refit on its obs
 | oracle | 0.73 [0.66, 0.79] (146/200) | 0.81 [0.76, 0.86] (163/200) | 0.72 [0.66, 0.78] (145/200) | 0.81 [0.74, 0.85] (161/200) | 0.70 [0.60, 0.78] (70/100) |
 <!-- /table -->
 
+**Time-aware arbitration** (wrist-camera executor; `learned_arbiter@m` picks the learned
+grasp only if its predicted success beats the skill's by more than m; all splits pooled):
+
+<!-- sweep: arbiter_margin -->
+| method | success | grasps by skill | s per grasp |
+|---|---|---|---|
+| always_skill | 0.46 [0.42, 0.49] (410/900) | 1.00 [1.00, 1.00] (963/963) | 0.26 |
+| always_learned | 0.78 [0.76, 0.81] (706/900) | 0.00 [0.00, 0.00] (0/1013) | 0.70 |
+| learned_arbiter | 0.78 [0.76, 0.81] (705/900) | 0.04 [0.03, 0.05] (37/1012) | 0.70 |
+| learned_arbiter@0.05 | 0.78 [0.75, 0.81] (703/900) | 0.11 [0.09, 0.13] (112/1012) | 0.68 |
+| learned_arbiter@0.1 | 0.77 [0.74, 0.80] (692/900) | 0.19 [0.16, 0.21] (189/1009) | 0.66 |
+| learned_arbiter@0.2 | 0.74 [0.71, 0.76] (663/900) | 0.33 [0.30, 0.36] (333/1008) | 0.60 |
+| learned_arbiter@0.3 | 0.69 [0.66, 0.72] (620/900) | 0.49 [0.45, 0.52] (486/1001) | 0.52 |
+| learned_arbiter@0.5 | 0.61 [0.58, 0.64] (550/900) | 0.70 [0.68, 0.73] (696/988) | 0.44 |
+<!-- /sweep -->
+
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
 instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
 grasp executor):
