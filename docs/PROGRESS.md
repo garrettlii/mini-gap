@@ -2,6 +2,26 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 5: Phase 5-7 results published
+- Works: results/ now holds every headline number (eval_arbiter, eval_arbiter_bc25/bc100,
+  repair, eval_methods, loop_bugs, loop_deployed); README and docs/WRITEUP.md render from
+  them (`report.py --render`). `uv run pytest --phase 7` 80 passed. Demo video in
+  docs/media/demo.mp4.
+- Phase 5: seeded-bug loops (3 tasks x 4 bugs, 4B specialist) raise held-out success from
+  0/64 to 64/64 on grasp yaw and depth bugs for place and stack (results/loop_bugs.json);
+  tight_verify fixed only on sort, no_release never. Over 330 edit records.
+- Phase 6: repair model zero-shot < SFT <= GRPO on all three tasks, sort held out
+  (results/repair.json); GRPO learned to restore default values; no high_verify_min fixes.
+- Phase 6b/7: learned arbiter ties always_learned on every split (weak dominance, also at 25
+  and 100 demos). Authoring methods: all fail stack and sort; critic edits change no outcome;
+  code's place release bug; the arbiter lifts LLM place graphs except on the object split.
+- Decisions: DECISIONS 2026-11-25 "Which authoring rows the results show" (graph_loop rows
+  filtered out: the deployed loop accepted no edit).
+- Next: optional: a learned executor with its own failure modes (wrist-image detection) to
+  give the arbiter something to arbitrate; higher-temperature GRPO; making the repo public.
+- Open: 41 pre-existing ruff findings across older modules (`ruff check .`); report widths
+  print at 3 decimals (blocks high_verify_min repairs).
+
 ## Session 4: Phases 5-6 code, Phase 6b arbiter, Phase 7 tooling
 - Works: `uv run pytest --phase 7` 78+ passed (executor semantics, arbiter, object split,
   camera noise, run_eval, report rendering). Repair loop with routed specialist/critic;

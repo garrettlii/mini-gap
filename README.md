@@ -60,10 +60,28 @@ learned grasp, or a per-node choice):
 | oracle | 0.88 [0.82, 0.91] (175/200) | 0.90 [0.84, 0.93] (179/200) | 0.77 [0.70, 0.82] (153/200) | 0.94 [0.90, 0.97] (188/200) | 0.81 [0.72, 0.87] (81/100) |
 <!-- /table -->
 
-**Policy authoring** (graphs and code written by the local 4B model; `graph_loop` is the
-planner's graph after the rehearsal repair loop):
+**Policy authoring** (graphs and code written by the local 4B model, one per task and
+instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
+grasp executor):
 
-<!-- table: eval_methods -->
+<!-- table: eval_methods methods=code,graph_single,graph_multi,graph_multi+learned_arbiter -->
+| method | nominal | pose | object | instruction | distractors | heldout_task |
+|---|---|---|---|---|---|---|
+| code | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.02] (0/200) | 0.22 [0.17, 0.28] (44/200) | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_single | 0.10 [0.06, 0.14] (19/200) | 0.09 [0.05, 0.13] (17/200) | 0.04 [0.02, 0.08] (9/200) | 0.11 [0.07, 0.16] (22/200) | 0.06 [0.03, 0.10] (12/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi | 0.10 [0.06, 0.14] (19/200) | 0.09 [0.05, 0.13] (17/200) | 0.04 [0.02, 0.08] (9/200) | 0.11 [0.07, 0.16] (22/200) | 0.06 [0.03, 0.10] (12/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi+learned_arbiter | 0.20 [0.15, 0.26] (40/200) | 0.20 [0.15, 0.26] (39/200) | 0.03 [0.01, 0.06] (6/200) | 0.20 [0.15, 0.27] (41/200) | 0.17 [0.12, 0.23] (34/200) | 0.00 [0.00, 0.04] (0/100) |
+<!-- /table -->
+
+**Rehearsal repair loop** (success of a seeded-bug graph before and after the loop on 64
+rehearsal seeds the loop never saw; four bug families pooled per task; clean sensor, as in
+the loop):
+
+<!-- table: loop_bugs by=task -->
+| method | place | stack | sort |
+|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) |
+| after_loop | 0.50 [0.44, 0.56] (128/256) | 0.50 [0.44, 0.56] (128/256) | 0.68 [0.62, 0.73] (174/256) |
 <!-- /table -->
 
 **Repair models** (fraction of held-out bugs fixed by one edit; sort is held out from
@@ -86,9 +104,10 @@ uv run python scripts/train_repair.py sft  --logs runs/*_gen_repairs/edits.jsonl
 uv run python scripts/train_repair.py grpo --logs runs/*_gen_repairs/edits.jsonl \
     --resume runs/<sft>/adapter/adapters.safetensors
 uv run python scripts/eval_repair.py --adapters sft=runs/<sft>/adapter grpo=runs/<grpo>/adapter
-uv run python scripts/run_loop.py --task place --start planner --specialist planner_repo --camera-noise
-uv run python -m gap.eval.run_eval --models runs/<train_arbiter> --loop-runs runs/<loops...> \
-    --methods code graph_single graph_multi graph_loop graph_loop+learned_arbiter
+uv run python scripts/run_loop.py --task place --bug diagonal_grasp --specialist planner_repo
+uv run python -m gap.eval.report --publish loop_bugs runs/<one run_loop dir per task and bug>
+uv run python -m gap.eval.run_eval --models runs/<train_arbiter> \
+    --methods code graph_single graph_multi graph_multi+learned_arbiter
 uv run python -m gap.eval.report --publish eval_methods runs/<eval>
 uv run python -m gap.eval.report --render README.md docs/WRITEUP.md
 ```

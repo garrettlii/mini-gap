@@ -1,0 +1,186 @@
+{
+ "cells": [
+  {
+   "method": "start_graph",
+   "split": "diagonal_grasp",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "diagonal_grasp",
+   "task": "place",
+   "successes": 64,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "grasp_too_deep",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "grasp_too_deep",
+   "task": "place",
+   "successes": 64,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "tight_verify",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "tight_verify",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "no_release",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "no_release",
+   "task": "place",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "diagonal_grasp",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "diagonal_grasp",
+   "task": "stack",
+   "successes": 64,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "grasp_too_deep",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "grasp_too_deep",
+   "task": "stack",
+   "successes": 64,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "tight_verify",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "tight_verify",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "no_release",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "no_release",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "diagonal_grasp",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "diagonal_grasp",
+   "task": "sort",
+   "successes": 58,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "grasp_too_deep",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "grasp_too_deep",
+   "task": "sort",
+   "successes": 58,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "tight_verify",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "tight_verify",
+   "task": "sort",
+   "successes": 58,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "no_release",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "no_release",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  }
+ ],
+ "sources": [
+  "20261125-190251_loop_place_diagonal_grasp_planner",
+  "20261125-190340_loop_place_grasp_too_deep_planner",
+  "20261125-190419_loop_place_tight_verify_planner",
+  "20261125-190704_loop_place_no_release_planner",
+  "20261125-190835_loop_stack_diagonal_grasp_planner",
+  "20261125-190921_loop_stack_grasp_too_deep_planner",
+  "20261125-191003_loop_stack_tight_verify_planner",
+  "20261125-191152_loop_stack_no_release_planner",
+  "20261125-191253_loop_sort_diagonal_grasp_planner",
+  "20261125-191617_loop_sort_grasp_too_deep_planner",
+  "20261125-191807_loop_sort_tight_verify_planner",
+  "20261125-191951_loop_sort_no_release_planner"
+ ]
+}

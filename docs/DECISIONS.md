@@ -204,3 +204,17 @@ splits) before making it. Format: date, decision, why, what it affects.
 - macOS also aborted a training step with "Impacting Interactivity" (a GPU command buffer ran
   too long). train_repair.py sets MLX_MAX_OPS_PER_BUFFER and MLX_MAX_MB_PER_BUFFER to 8 so
   MLX submits shorter buffers; speed unchanged.
+
+## 2026-11-25: Which authoring rows the results show
+- The deployed-condition loops (run_loop --camera-noise) accepted no edit on any task, so
+  their final graphs are one more planner call per task, not repaired graphs, and differ from
+  graph_single only by planner sampling. The graph_loop and graph_loop+learned_arbiter cells
+  stay in results/eval_methods.json, but README and the write-up filter them out
+  (methods= on the table marker) and say why.
+- The full-system row is graph_multi+learned_arbiter instead: the same per-instruction graphs
+  as graph_multi, reused from the first evaluation run (--policies-from), with the learned
+  arbiter on the grasp nodes. Reuse keeps the comparison paired.
+- Loop results go through report.py like every other number: load_cells turns a run_loop
+  metrics.json into two cells (start_graph, after_loop) with split = bug name (or "planner").
+  results/loop_bugs.json holds the twelve seeded-bug loops (3 tasks x 4 bugs, 4B specialist,
+  clean sensor); results/loop_deployed.json the three deployed-condition loops.

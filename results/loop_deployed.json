@@ -1,0 +1,51 @@
+{
+ "cells": [
+  {
+   "method": "start_graph",
+   "split": "planner",
+   "task": "place",
+   "successes": 22,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "planner",
+   "task": "place",
+   "successes": 22,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "planner",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "planner",
+   "task": "stack",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "start_graph",
+   "split": "planner",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  },
+  {
+   "method": "after_loop",
+   "split": "planner",
+   "task": "sort",
+   "successes": 0,
+   "n": 64
+  }
+ ],
+ "sources": [
+  "20261125-151008_loop_place_planner_planner_noise",
+  "20261125-151700_loop_stack_planner_planner_noise",
+  "20261125-184029_loop_sort_planner_planner_noise"
+ ]
+}

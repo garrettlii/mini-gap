@@ -17,6 +17,14 @@ model. Separately, we train a 2B-parameter Qwen model with supervised fine-tunin
 simulator rewards to repair broken graphs, and test it on a task held out from training. All
 models run locally; no paid API is used.
 
+In our setting the learned grasp never fails from a state where the scripted grasp succeeds,
+so the learned arbiter reduces to always choosing it: it ties always-learned and does not fall
+below the per-node oracle. Testing per-node arbitration properly needs a learned executor with
+failure modes of its own. The trained repair model fixes more held-out bugs than the untrained
+one on every task, including the held-out task. The rehearsal loop repairs seeded
+grasp-geometry bugs on every task, but the local 4B model's first-draft graphs fail stack and
+sort, and single edits do not repair them under camera noise.
+
 ## 1 Introduction
 
 Writing a robot policy as a graph of skills makes failures local. When a run fails, the trace
@@ -205,10 +213,53 @@ assumptions hold does not create such situations; a learned policy with its own 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 
 Free-form code over the same skills, a single planner call, and planner plus structure
-critic, each written once per (task, instruction) by the local 4B model.
+critic, each written once per (task, instruction) by the local 4B model. The last row runs
+the graph_multi graphs unchanged except that the learned arbiter picks each grasp node's
+executor. The instruction split uses paraphrased instructions.
 
-<!-- table: eval_methods -->
+<!-- table: eval_methods methods=code,graph_single,graph_multi,graph_multi+learned_arbiter -->
+| method | nominal | pose | object | instruction | distractors | heldout_task |
+|---|---|---|---|---|---|---|
+| code | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.02] (0/200) | 0.22 [0.17, 0.28] (44/200) | 0.00 [0.00, 0.02] (0/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_single | 0.10 [0.06, 0.14] (19/200) | 0.09 [0.05, 0.13] (17/200) | 0.04 [0.02, 0.08] (9/200) | 0.11 [0.07, 0.16] (22/200) | 0.06 [0.03, 0.10] (12/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi | 0.10 [0.06, 0.14] (19/200) | 0.09 [0.05, 0.13] (17/200) | 0.04 [0.02, 0.08] (9/200) | 0.11 [0.07, 0.16] (22/200) | 0.06 [0.03, 0.10] (12/200) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi+learned_arbiter | 0.20 [0.15, 0.26] (40/200) | 0.20 [0.15, 0.26] (39/200) | 0.03 [0.01, 0.06] (6/200) | 0.20 [0.15, 0.27] (41/200) | 0.17 [0.12, 0.23] (34/200) | 0.00 [0.00, 0.04] (0/100) |
 <!-- /table -->
+
+The same runs by task:
+
+<!-- table: eval_methods by=task methods=code,graph_single,graph_multi,graph_multi+learned_arbiter -->
+| method | place | stack | sort |
+|---|---|---|---|
+| code | 0.09 [0.07, 0.12] (44/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+| graph_single | 0.16 [0.13, 0.19] (79/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi | 0.16 [0.13, 0.19] (79/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+| graph_multi+learned_arbiter | 0.32 [0.28, 0.36] (160/500) | 0.00 [0.00, 0.01] (0/500) | 0.00 [0.00, 0.04] (0/100) |
+<!-- /table -->
+
+The 4B model's first drafts are far below the reference graphs of Section 5.1, and none of
+these methods completes a stack or sort episode on any split. The failures are authoring
+errors, not noise. For "place the red block on the yellow square" the planner's graph looks
+for a yellow cube, but the yellow square is the target zone. In the code written for the two
+most common place instructions, the release step calls `close_gripper()` where it should open
+the gripper, so code succeeds on place only for instructions where it wrote a correct release
+(<!-- rate: eval_methods code instruction place -->0.44 [0.35, 0.54] (44/100)<!-- /rate --> on the instruction split).
+Stack graphs mostly fail at the first grasp (one finger on the cube) or at its verification.
+
+The structure critic changed some of the place graphs but no episode outcome: graph_single and
+graph_multi agree on every evaluation episode. Handing grasps to the learned policy lifts the
+place graphs that already reach the cube
+(<!-- rate: eval_methods graph_multi nominal place -->0.19 [0.13, 0.28] (19/100)<!-- /rate --> to
+<!-- rate: eval_methods graph_multi+learned_arbiter nominal place -->0.40 [0.31, 0.50] (40/100)<!-- /rate --> on
+nominal) and cannot help graphs that fail before the grasp. The object split is the
+exception: the planner's verify nodes accept only finger widths that fit the 4 cm cube, so
+they reject the learned policy's successful grasps of the 3 cm and 5 cm variants (the
+reference graphs of Section 5.1 use a band that admits every variant).
+
+The evaluation run also scored the final graph of a deployed-condition repair loop for each
+task (graph_loop in results/eval_methods.json). The loop made no accepted edits (Section 5.4),
+so those graphs are simply a separate planner call per task, and their gap to graph_single is
+variation between planner calls, not a loop effect. We leave them out of the tables.
 
 ### 5.3 Repair models
 
@@ -242,6 +293,49 @@ During GRPO the four samples drawn for a prompt became identical partway through
 which gives GRPO no learning signal on that prompt. A higher sampling temperature or more
 distinct prompts per update are the obvious next steps.
 
+### 5.4 Rehearsal repair loop
+
+Each loop starts from a reference graph with one seeded bug (four bug families per task),
+rehearses 32 instances, asks the 4B model for parameter edits at the blamed node (and the
+critic for structural edits), and keeps an edit only if rehearsal success rises. Held-out
+success is measured before and after on 64 other rehearsal seeds, under the loop's own
+conditions: clean sensor and the ground-truth locator. Rows: the seeded-bug graph and the
+loop's final graph; each cell pools the four bugs of a task.
+
+<!-- table: loop_bugs by=task -->
+| method | place | stack | sort |
+|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) |
+| after_loop | 0.50 [0.44, 0.56] (128/256) | 0.50 [0.44, 0.56] (128/256) | 0.68 [0.62, 0.73] (174/256) |
+<!-- /table -->
+
+By bug, pooled over tasks:
+
+<!-- table: loop_bugs -->
+| method | diagonal_grasp | grasp_too_deep | tight_verify | no_release |
+|---|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) |
+| after_loop | 0.97 [0.93, 0.99] (186/192) | 0.97 [0.93, 0.99] (186/192) | 0.30 [0.24, 0.37] (58/192) | 0.00 [0.00, 0.02] (0/192) |
+<!-- /table -->
+
+The loop fixes the grasp-yaw and grasp-depth bugs on every task
+(<!-- rate: loop_bugs after_loop diagonal_grasp -->0.97 [0.93, 0.99] (186/192)<!-- /rate --> and
+<!-- rate: loop_bugs after_loop grasp_too_deep -->0.97 [0.93, 0.99] (186/192)<!-- /rate --> after the loop): the
+diagnosis reports the hand-object geometry and the specialist resets the parameter behind
+it. The over-tight verification band is fixed only on sort. On place and stack the
+specialist edits the right parameter in the right direction, but both proposals keep the
+upper limit below the cube's width, and later rounds move to other nodes. On sort its second
+proposal clears the width. No loop restores the missing release. Diagnosis blames the retreat
+node that follows it, where the cube leaves with the hand; the specialist raises the retreat
+height, and the critic inserts motion or retry steps instead of an open-gripper node.
+
+Run under deployment conditions instead (RGB-D locator and camera noise, starting from the
+planner's graph), the loop accepted no edit on any task: held-out place success stayed at
+<!-- rate: loop_deployed after_loop planner place -->0.34 [0.24, 0.47] (22/64)<!-- /rate -->. The specialist's
+proposals (wider move tolerance, higher speed, perception thresholds, grasp yaw) left
+rehearsal success unchanged or lowered it. Stack and sort start at zero rehearsal successes,
+and no single edit moved them off zero, which leaves the loop with nothing to compare.
+
 ## 6 Limitations
 
 - Simulation only. The camera noise model and object variants were added by us so that a
@@ -254,7 +348,9 @@ distinct prompts per update are the obvious next steps.
 - The oracle executor restores a simulator snapshot and is not deployable. It is a per-node
   bound, not a per-episode one: it keeps the skill's result whenever the skill passes its
   post-check, even if that grasp later slips, so an always-learned policy can beat it.
-- All language models are small local Qwen models; we report no frontier-model rows.
+- All language models are small local Qwen models; we report no frontier-model rows. The
+  authoring comparison uses one draft per instruction; all methods fail stack and sort, so
+  those columns do not separate them.
 
 ## 7 Related work
 
