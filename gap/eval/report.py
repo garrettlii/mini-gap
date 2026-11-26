@@ -12,6 +12,11 @@ Never hand-edit numbers into README or the write-up: regenerate them from here.
   <!-- table: <label> [by=task] [methods=a,b] --> ... <!-- /table -->
   <!-- rate: <label> <method> <split> [task] --> ... <!-- /rate -->
   <!-- sweep: <label> [methods=a,b] --> ... <!-- /sweep -->   (success, skill share, grasp time)
+  <!-- paired: <label> --> ... <!-- /paired -->   (episode-matched comparisons, sign test)
+
+  uv run python -m gap.eval.report --paired <label> <method A> <method B> runs/<run>...
+adds one comparison to results/<label>.json: episodes matched by (split, task, seed), how
+often only A or only B succeeded, and the exact two-sided sign-test p on those (McNemar).
 """
 
 from __future__ import annotations
@@ -22,11 +27,13 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from scipy.stats import binomtest
+
 from gap.utils.runs import read_jsonl
 from gap.utils.stats import fmt_rate
 
 RESULTS = Path(__file__).resolve().parents[2] / "results"
-BLOCK = re.compile(r"<!-- (table|rate|sweep): ([^>]*?) -->.*?<!-- /\1 -->", re.DOTALL)
+BLOCK = re.compile(r"<!-- (table|rate|sweep|paired): ([^>]*?) -->.*?<!-- /\1 -->", re.DOTALL)
 
 
 def load_cells(metrics_paths: list[str]) -> list[dict]:
@@ -115,6 +122,9 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
         kind, spec = m.group(1), m.group(2).split()
         if not (results_dir / f"{spec[0]}.json").exists():   # not published yet: leave as is
             return m.group(0)
+        if kind == "paired":
+            comps = json.loads((results_dir / f"{spec[0]}.json").read_text())["comparisons"]
+            return f"<!-- paired: {m.group(2)} -->\n{_paired_table(comps)}\n<!-- /paired -->"
         cells = load_cells([str(results_dir / f"{spec[0]}.json")])
         if kind == "rate":
             return f"<!-- rate: {m.group(2)} -->{_rate(cells, *spec[1:])}<!-- /rate -->"
@@ -140,6 +150,37 @@ def publish(label: str, run_dirs: list[str], results_dir: Path = RESULTS) -> Pat
     return out
 
 
+def paired(run_dirs: list[str], a: str, b: str) -> dict:
+    """Compare methods a and b on the episodes both ran (same split, task, seed); evaluation
+    is deterministic, so these are the same scenes."""
+    rows = [r for d in run_dirs for r in read_jsonl(Path(d) / "episodes.jsonl")]
+    ok = {m: {(r["split"], r["task"], r["seed"]): r["success"] for r in rows if r["method"] == m}
+          for m in (a, b)}
+    keys = ok[a].keys() & ok[b].keys()
+    a_only = sum(ok[a][k] and not ok[b][k] for k in keys)
+    b_only = sum(ok[b][k] and not ok[a][k] for k in keys)
+    p = binomtest(a_only, a_only + b_only).pvalue if a_only + b_only else 1.0
+    return {"a": a, "b": b, "episodes": len(keys), "a_only": a_only, "b_only": b_only,
+            "p": float(p), "sources": [Path(d).name for d in run_dirs]}
+
+
+def add_comparison(label: str, comp: dict, results_dir: Path = RESULTS) -> Path:
+    """Append (or replace, same a and b) a comparison in results/<label>.json."""
+    out = results_dir / f"{label}.json"
+    comps = json.loads(out.read_text())["comparisons"] if out.exists() else []
+    comps = [c for c in comps if (c["a"], c["b"]) != (comp["a"], comp["b"])] + [comp]
+    out.write_text(json.dumps({"comparisons": comps}, indent=1))
+    return out
+
+
+def _paired_table(comps: list[dict]) -> str:
+    lines = ["| A vs B | episodes | only A succeeded | only B succeeded | sign test p |",
+             "|---|---|---|---|---|"]
+    lines += [f"| {c['a']} vs {c['b']} | {c['episodes']} | {c['a_only']} | {c['b_only']} | "
+              f"{c['p']:.2g} |" for c in comps]
+    return "\n".join(lines)
+
+
 def failure_breakdown(episodes_path: str, top: int = 5) -> str:
     """Most common first failing node per method, from an episodes.jsonl."""
     counts: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -160,9 +201,14 @@ def main() -> None:
     ap.add_argument("--by", choices=["split", "task"], default="split")
     ap.add_argument("--publish", nargs="+", metavar="LABEL RUN_DIR")
     ap.add_argument("--render", nargs="+", metavar="FILE")
+    ap.add_argument("--paired", nargs="+", metavar="LABEL A B RUN_DIR")
     args = ap.parse_args()
     if args.publish:
         print(publish(args.publish[0], args.publish[1:]))
+    if args.paired:
+        label, a, b, *runs = args.paired
+        comp = paired(runs, a, b)
+        print(add_comparison(label, comp), comp)
     for path in args.render or []:
         Path(path).write_text(render(Path(path).read_text()))
         print("rendered", path)

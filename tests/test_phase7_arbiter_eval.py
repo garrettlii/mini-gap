@@ -231,3 +231,19 @@ def test_invert_starts_as_the_stack_goal(cell, split):
     assert not check("invert", state, tasks["invert"], half)
     g, r = inst.object_poses["green_cube"].pos, inst.object_poses["red_cube"].pos
     assert g[:2] == r[:2] and g[2] == pytest.approx(2 * half["red_cube"] + half["green_cube"])
+
+
+def test_paired_comparison_counts_discordant_episodes(tmp_path):
+    import json
+
+    from gap.eval.report import add_comparison, paired, render
+    rows = [{"method": m, "split": "nominal", "task": "place", "seed": s, "success": ok}
+            for s in range(10) for m, ok in (("a", s < 9), ("b", s < 1))]
+    (tmp_path / "run").mkdir()
+    (tmp_path / "run" / "episodes.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    comp = paired([str(tmp_path / "run")], "a", "b")
+    assert (comp["episodes"], comp["a_only"], comp["b_only"]) == (10, 8, 0)
+    assert comp["p"] == pytest.approx(2 * 0.5**8)
+    add_comparison("cmp", comp, tmp_path)
+    out = render("<!-- paired: cmp -->\n<!-- /paired -->", tmp_path)
+    assert "| a vs b | 10 | 8 | 0 |" in out and render(out, tmp_path) == out
