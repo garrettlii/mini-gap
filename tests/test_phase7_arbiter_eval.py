@@ -176,3 +176,16 @@ def test_wrist_observation_finds_the_cube(cell):
     assert seen[8] > 0
     move_tcp(cell, Pose((0.3, -0.45, 0.3), tcp.quat))     # over bare table
     assert observe_wrist(cell, None)[8] == 0.0
+
+
+def test_paired_outcomes_become_cells(tmp_path):
+    import json
+
+    from gap.eval.report import load_cells
+    (tmp_path / "metrics.json").write_text(json.dumps({"paired_rows": 3}))
+    (tmp_path / "config.json").write_text(json.dumps({"demos": 25, "obs": "wrist"}))
+    rows = [{"obs": [0], "ok_skill": s, "ok_learned": lrn} for s, lrn in
+            ((True, False), (True, True), (False, True))]
+    (tmp_path / "paired.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+    cells = {c["method"]: c["successes"] for c in load_cells([str(tmp_path / "metrics.json")])}
+    assert cells == {"skill_only": 1, "learned_only": 1, "both": 1, "neither": 0}

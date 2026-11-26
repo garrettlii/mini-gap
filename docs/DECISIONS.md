@@ -257,4 +257,9 @@ splits) before making it. Format: date, decision, why, what it affects.
   `seen`.
 - `train_arbiter.py --obs wrist`. The pickled policy carries its observation mode, so paired
   data, the arbiter and run_eval use the matching observation.
-- All parameters above were fixed before any wrist-executor result was seen.
+- All parameters above were fixed before any wrist-executor result was seen. Two detector
+  bugs were fixed before training (flat blobs: the zone and floor), none after.
+- Reporting: results/eval_arbiter_wrist.json (six policies, eval seeds) and
+  results/paired_outcomes.json, which report.py builds from each train_arbiter run's
+  paired.jsonl (share of paired states where only the skill, only the learned grasp, both,
+  or neither passed), so the dominance claim is a generated number like the rest.

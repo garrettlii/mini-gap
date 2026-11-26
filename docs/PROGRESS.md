@@ -2,6 +2,19 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 6: wrist-camera learned grasp
+- Works: gap/arbiter/wrist.py, a learned grasp that finds the object in the wrist RGB-D image
+  (hand-eye calibration error and depth noise under the noise model); train_arbiter --obs
+  wrist in runs/20261126-002148_train_arbiter, eval in runs/20261126-003116_eval.
+  `uv run pytest --phase 7` 83 passed; `ruff check .` clean.
+- Finding: the wrist grasp is weaker than the privileged one but its failures nest inside the
+  scripted close's (results/paired_outcomes.json: skill-only states 3/392), so the learned
+  arbiter again ties always_learned on every split (results/eval_arbiter_wrist.json).
+- Decisions: DECISIONS 2026-11-26 wrist entry (design fixed before results), lint cleanup.
+- Next: an arbiter that weighs cycle time as well as success (the scripted close is faster
+  where both succeed; make_policy already takes a margin).
+- Open: no minimum depth range in the wrist camera model.
+
 ## Session 5: Phase 5-7 results published
 - Works: results/ now holds every headline number (eval_arbiter, eval_arbiter_bc25/bc100,
   repair, eval_methods, loop_bugs, loop_deployed); README and docs/WRITEUP.md render from

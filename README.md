@@ -60,6 +60,20 @@ learned grasp, or a per-node choice):
 | oracle | 0.88 [0.82, 0.91] (175/200) | 0.90 [0.84, 0.93] (179/200) | 0.77 [0.70, 0.82] (153/200) | 0.94 [0.90, 0.97] (188/200) | 0.81 [0.72, 0.87] (81/100) |
 <!-- /table -->
 
+**Arbitration with a wrist-camera learned grasp** (the learned grasp finds the object in
+its own RGB-D image instead of reading its true offset; arbiter refit on its observation):
+
+<!-- table: eval_arbiter_wrist -->
+| method | nominal | pose | object | distractors | heldout_task |
+|---|---|---|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.50 [0.43, 0.57] (100/200) | 0.46 [0.39, 0.52] (91/200) | 0.48 [0.42, 0.55] (97/200) | 0.37 [0.28, 0.47] (37/100) |
+| always_learned | 0.75 [0.69, 0.80] (150/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.72 [0.63, 0.80] (72/100) |
+| validity_only | 0.53 [0.46, 0.59] (105/200) | 0.62 [0.56, 0.69] (125/200) | 0.55 [0.48, 0.61] (109/200) | 0.59 [0.52, 0.66] (118/200) | 0.48 [0.38, 0.58] (48/100) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (127/200) | 0.73 [0.67, 0.79] (147/200) | 0.66 [0.59, 0.72] (131/200) | 0.72 [0.65, 0.78] (144/200) | 0.59 [0.49, 0.68] (59/100) |
+| learned_arbiter | 0.74 [0.68, 0.80] (149/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.72, 0.83] (156/200) | 0.81 [0.74, 0.85] (161/200) | 0.70 [0.60, 0.78] (70/100) |
+| oracle | 0.73 [0.66, 0.79] (146/200) | 0.81 [0.76, 0.86] (163/200) | 0.72 [0.66, 0.78] (145/200) | 0.81 [0.74, 0.85] (161/200) | 0.70 [0.60, 0.78] (70/100) |
+<!-- /table -->
+
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
 instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
 grasp executor):

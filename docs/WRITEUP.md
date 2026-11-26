@@ -17,10 +17,11 @@ model. Separately, we train a 2B-parameter Qwen model with supervised fine-tunin
 simulator rewards to repair broken graphs, and test it on a task held out from training. All
 models run locally; no paid API is used.
 
-In our setting the learned grasp never fails from a state where the scripted grasp succeeds,
-so the learned arbiter reduces to always choosing it: it ties always-learned and does not fall
-below the per-node oracle. Testing per-node arbitration properly needs a learned executor with
-failure modes of its own. The trained repair model fixes more held-out bugs than the untrained
+In our setting the learned grasp almost never fails from a state where the scripted grasp
+succeeds, whether it reads the true object offset or has to find the object in its own
+wrist-camera image. The learned arbiter therefore reduces to choosing the learned grasp: it
+ties always-learned and does not fall below the per-node oracle. Where both succeed the
+scripted grasp is faster, so a useful arbiter would weigh cycle time as well as success. The trained repair model fixes more held-out bugs than the untrained
 one on every task, including the held-out task. The rehearsal loop repairs seeded
 grasp-geometry bugs on every task, but the local 4B model's first-draft graphs fail stack and
 sort, and single edits do not repair them under camera noise.
@@ -108,6 +109,19 @@ plus gripper width and height. This is a stand-in for a wrist camera, and it is 
 the policy does not have to detect the object. It outputs a hand-frame velocity and a close
 command; a damped-least-squares Jacobian step converts the velocity into joint targets.
 Demonstrations start from perturbed hand poses (±2 cm, ±0.35 rad) with DART-style action noise.
+
+**Learned grasp from the wrist camera.** A second learned grasp has to find the object
+itself. At every control step it renders the hand's RGB-D camera (6 cm off the finger axis,
+looking down, 75° field of view), segments each cube color, back-projects the pixels through
+the calibrated hand-eye pose, keeps the top face, and takes the blob nearest the fingers.
+From that it computes the same quantities as the privileged observation, plus the visible
+fraction of the top face. Under the noise model the hand-eye calibration carries its own
+per-episode error (0.5° and 2 mm per axis) and the same depth noise. Near the object the top
+face can leave the image or hide behind a finger, and then the estimate is wrong in ways the
+scripted skill, which trusts the overhead estimate, does not share. The demonstrator still
+acts on the true offsets; the student is fit on its wrist observation. The arbiter for this
+executor sees the same wrist observation, which is available at run time. Every parameter
+was fixed before any result was seen.
 
 **Paired data and the arbiter.** At every grasp node of rehearsal episodes we snapshot the
 simulator, run the scripted skill, restore, and run the learned executor, recording both
@@ -208,7 +222,53 @@ never fails where the scripted close succeeds, and the refit arbiters again pick
 nearly all paired states. Per-node arbitration pays off when the executors fail in different
 situations. A learned executor that reduces to the scripted action whenever the scripted
 assumptions hold does not create such situations; a learned policy with its own failure modes
-(for example one that must detect the object from a wrist image) would be the test case.
+is the test case, which the wrist-camera grasp provides.
+
+**Learned grasp from the wrist camera.** The same six policies with the wrist-camera grasp
+(Section 3) and its refit arbiter, on the same evaluation seeds.
+
+<!-- table: eval_arbiter_wrist -->
+| method | nominal | pose | object | distractors | heldout_task |
+|---|---|---|---|---|---|
+| always_skill | 0.42 [0.36, 0.49] (85/200) | 0.50 [0.43, 0.57] (100/200) | 0.46 [0.39, 0.52] (91/200) | 0.48 [0.42, 0.55] (97/200) | 0.37 [0.28, 0.47] (37/100) |
+| always_learned | 0.75 [0.69, 0.80] (150/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.71, 0.83] (155/200) | 0.80 [0.74, 0.85] (160/200) | 0.72 [0.63, 0.80] (72/100) |
+| validity_only | 0.53 [0.46, 0.59] (105/200) | 0.62 [0.56, 0.69] (125/200) | 0.55 [0.48, 0.61] (109/200) | 0.59 [0.52, 0.66] (118/200) | 0.48 [0.38, 0.58] (48/100) |
+| fallback_on_failure | 0.64 [0.57, 0.70] (127/200) | 0.73 [0.67, 0.79] (147/200) | 0.66 [0.59, 0.72] (131/200) | 0.72 [0.65, 0.78] (144/200) | 0.59 [0.49, 0.68] (59/100) |
+| learned_arbiter | 0.74 [0.68, 0.80] (149/200) | 0.84 [0.79, 0.89] (169/200) | 0.78 [0.72, 0.83] (156/200) | 0.81 [0.74, 0.85] (161/200) | 0.70 [0.60, 0.78] (70/100) |
+| oracle | 0.73 [0.66, 0.79] (146/200) | 0.81 [0.76, 0.86] (163/200) | 0.72 [0.66, 0.78] (145/200) | 0.81 [0.74, 0.85] (161/200) | 0.70 [0.60, 0.78] (70/100) |
+<!-- /table -->
+
+**Paired outcomes.** For each learned grasp, the share of paired training states (place and
+stack, nominal and object splits, camera noise on) by which executors passed the node's
+post-check from the same snapshot. Columns: observation and number of demonstrations.
+
+<!-- table: paired_outcomes -->
+| method | privileged/600 | privileged/25 | privileged/100 | wrist/600 |
+|---|---|---|---|---|
+| skill_only | 0.00 [0.00, 0.01] (0/392) | 0.00 [0.00, 0.01] (0/392) | 0.00 [0.00, 0.01] (0/392) | 0.01 [0.00, 0.02] (3/392) |
+| learned_only | 0.47 [0.42, 0.52] (184/392) | 0.39 [0.35, 0.44] (154/392) | 0.46 [0.41, 0.51] (179/392) | 0.33 [0.29, 0.38] (131/392) |
+| both | 0.52 [0.47, 0.57] (203/392) | 0.52 [0.47, 0.57] (203/392) | 0.52 [0.47, 0.57] (203/392) | 0.51 [0.46, 0.56] (200/392) |
+| neither | 0.01 [0.01, 0.03] (5/392) | 0.09 [0.06, 0.12] (35/392) | 0.03 [0.01, 0.05] (10/392) | 0.15 [0.12, 0.19] (58/392) |
+<!-- /table -->
+
+The wrist camera costs the learned grasp success (always_learned on nominal:
+<!-- rate: eval_arbiter always_learned nominal -->0.92 [0.87, 0.95] (184/200)<!-- /rate --> reading the true offset,
+<!-- rate: eval_arbiter_wrist always_learned nominal -->0.75 [0.69, 0.80] (150/200)<!-- /rate --> from the wrist
+image), and the share of paired states where neither executor succeeds rises from
+<!-- rate: paired_outcomes neither privileged/600 -->0.01 [0.01, 0.03] (5/392)<!-- /rate --> to
+<!-- rate: paired_outcomes neither wrist/600 -->0.15 [0.12, 0.19] (58/392)<!-- /rate -->. But the new failures fall
+almost entirely on states where the scripted close fails as well: the scripted close alone
+succeeds in <!-- rate: paired_outcomes skill_only wrist/600 -->0.01 [0.00, 0.02] (3/392)<!-- /rate --> of paired
+states. Those states are too few for the refit arbiter to find a region where the skill is
+better, so it still sends almost every grasp to the learned policy, and its row matches
+always_learned within a few episodes on every split. The shared failures are not simply the
+far-off starts: in the paired data they come with smaller closing-axis offsets than the
+states only the learned grasp wins, and with less of the top face in view.
+
+So in this workcell the scripted close almost never wins on success, even against a learned grasp
+that must find the object itself. Its advantage is time: it closes at once, while the learned
+grasp servos first. An arbiter that weighs cycle time as well as success could give the
+states where both succeed back to the scripted close; we leave that to future work.
 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 
@@ -340,8 +400,11 @@ and no single edit moved them off zero, which leaves the loop with nothing to co
 
 - Simulation only. The camera noise model and object variants were added by us so that a
   learned executor has failures to fix; they are applied equally to all methods.
-- The learned grasp's observation is privileged (true relative pose plus small noise). A real
-  wrist camera would need detection and would add its own failures.
+- The first learned grasp's observation is privileged (true relative pose plus small noise).
+  The wrist-camera grasp detects the object itself, but its simulated depth camera has no
+  minimum range (real short-range depth cameras lose depth below about 7 cm, closer than the
+  top face at grasp height), and color segmentation works only because every object has its
+  own saturated color.
 - Object variants keep the 4 cm cube's mass and inertia.
 - Only the grasp node type has a learned executor; reach and place nodes always run their
   skills.

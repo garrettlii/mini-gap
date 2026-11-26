@@ -40,11 +40,26 @@ def load_cells(metrics_paths: list[str]) -> list[dict]:
                 for task, c in tasks.items():
                     cells.append({"method": method, "split": m.get("seeds", "dev"), "task": task,
                                   "successes": c["successes"], "n": c["n"]})
+        elif "paired_rows" in m:  # scripts/train_arbiter.py: paired executor outcomes
+            cells += _paired_cells(Path(path).parent)
         elif "heldout_before" in m:  # scripts/run_loop.py: held-out success before/after
             for method, key in (("start_graph", "heldout_before"), ("after_loop", "heldout_after")):
                 cells.append({"method": method, "split": m.get("bug") or m["start"],
                               "task": m["task"], "successes": m[key], "n": m["heldout_n"]})
     return cells
+
+
+def _paired_cells(run: Path) -> list[dict]:
+    """Share of paired states per outcome (which executors passed the post-check from the same
+    snapshot); split = the learned grasp's observation and demo count."""
+    cfg = json.loads((run / "config.json").read_text())
+    split = f"{cfg.get('obs', 'privileged')}/{cfg['demos']}"   # no spaces: rate markers split on them
+    rows = [r for r in read_jsonl(run / "paired.jsonl") if "obs" in r]
+    names = {(True, False): "skill_only", (False, True): "learned_only",
+             (True, True): "both", (False, False): "neither"}
+    return [{"method": name, "split": split, "task": "all", "n": len(rows),
+             "successes": sum((r["ok_skill"], r["ok_learned"]) == k for r in rows)}
+            for k, name in names.items()]
 
 
 def results_table(metrics_paths: list[str], by: str = "split") -> str:

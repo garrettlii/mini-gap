@@ -1,0 +1,122 @@
+{
+ "cells": [
+  {
+   "method": "skill_only",
+   "split": "privileged/600",
+   "task": "all",
+   "n": 392,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/600",
+   "task": "all",
+   "n": 392,
+   "successes": 184
+  },
+  {
+   "method": "both",
+   "split": "privileged/600",
+   "task": "all",
+   "n": 392,
+   "successes": 203
+  },
+  {
+   "method": "neither",
+   "split": "privileged/600",
+   "task": "all",
+   "n": 392,
+   "successes": 5
+  },
+  {
+   "method": "skill_only",
+   "split": "privileged/25",
+   "task": "all",
+   "n": 392,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/25",
+   "task": "all",
+   "n": 392,
+   "successes": 154
+  },
+  {
+   "method": "both",
+   "split": "privileged/25",
+   "task": "all",
+   "n": 392,
+   "successes": 203
+  },
+  {
+   "method": "neither",
+   "split": "privileged/25",
+   "task": "all",
+   "n": 392,
+   "successes": 35
+  },
+  {
+   "method": "skill_only",
+   "split": "privileged/100",
+   "task": "all",
+   "n": 392,
+   "successes": 0
+  },
+  {
+   "method": "learned_only",
+   "split": "privileged/100",
+   "task": "all",
+   "n": 392,
+   "successes": 179
+  },
+  {
+   "method": "both",
+   "split": "privileged/100",
+   "task": "all",
+   "n": 392,
+   "successes": 203
+  },
+  {
+   "method": "neither",
+   "split": "privileged/100",
+   "task": "all",
+   "n": 392,
+   "successes": 10
+  },
+  {
+   "method": "skill_only",
+   "split": "wrist/600",
+   "task": "all",
+   "n": 392,
+   "successes": 3
+  },
+  {
+   "method": "learned_only",
+   "split": "wrist/600",
+   "task": "all",
+   "n": 392,
+   "successes": 131
+  },
+  {
+   "method": "both",
+   "split": "wrist/600",
+   "task": "all",
+   "n": 392,
+   "successes": 200
+  },
+  {
+   "method": "neither",
+   "split": "wrist/600",
+   "task": "all",
+   "n": 392,
+   "successes": 58
+  }
+ ],
+ "sources": [
+  "20261124-230951_train_arbiter",
+  "20261124-232312_train_arbiter",
+  "20261124-232602_train_arbiter",
+  "20261126-002148_train_arbiter"
+ ]
+}
