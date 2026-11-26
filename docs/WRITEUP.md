@@ -8,23 +8,31 @@ with Wilson 95% intervals and raw counts.
 
 Graph-as-Policy (GaP) systems have language models write robot policies as graphs of typed
 skills, rehearse them in simulation, and repair the node that failed. Each node runs a
-scripted skill. Recent agentic manipulation work names, as an open problem, letting each node
-choose at run time between its scripted skill and a learned policy. We build a laptop-scale
-GaP in MuJoCo with a Franka Panda, add a learned grasp executor, and train a per-node arbiter
-from paired executor outcomes collected from identical simulator states. We compare six
-arbitration policies across five evaluation splits with a realistic overhead-camera noise
-model. Separately, we train a 2B-parameter Qwen model with supervised fine-tuning and GRPO on
+scripted skill. Recent agentic manipulation work names, as an open problem, letting each
+node choose at run time between its scripted skill and a learned policy. We build a
+laptop-scale GaP in MuJoCo with a Franka Panda, add a learned grasp executor, and train a
+per-node arbiter from paired executor outcomes collected from identical simulator states. We
+compare up to seven arbitration policies on five tasks and up to five evaluation splits with
+a realistic camera noise model, matching episodes across policies for paired sign tests.
+Separately, we train a 2B-parameter Qwen model with supervised fine-tuning and GRPO on
 simulator rewards to repair broken graphs, and test it on a task held out from training. All
 models run locally; no paid API is used.
 
-In our setting the learned grasp almost never fails from a state where the scripted grasp
-succeeds, whether it reads the true object offset or has to find the object in its own
-wrist-camera image. The learned arbiter therefore reduces to choosing the learned grasp: it
-ties always-learned and does not fall below the per-node oracle. Where both succeed the
-scripted grasp is faster, so a useful arbiter would weigh cycle time as well as success. The trained repair model fixes more held-out bugs than the untrained
-one on every task, including the held-out task. The rehearsal loop repairs seeded
-grasp-geometry bugs on every task, but the local 4B model's first-draft graphs fail stack and
-sort, and single edits do not repair them under camera noise.
+When every cube starts on the table, the learned grasp almost never fails from a state where
+the scripted grasp succeeds, whether it reads the true object offset or has to find the
+object in its own wrist-camera image. The learned arbiter then reduces to choosing the
+learned grasp and ties always-learned; a margin that favors the faster scripted grasp only
+trades success for time. When a task starts from a stack, so a grasp takes a cube off
+another cube, the scripted grasp wins a share of states. An arbiter refit on such states
+beats both single executors episode by episode, with faster grasps than always-learned, and
+the rule transfers to a taller stack it never saw. A skill-first fallback that retries
+within the node does at least as well as that arbiter; given the same retry, the arbiter
+beats it on the task whose goal is a stack and ties it on the one whose goal is zones.
+
+The trained repair model fixes more held-out bugs than the untrained one on every task,
+including the held-out task. The rehearsal loop repairs seeded grasp-geometry bugs on every
+task, but the local 4B model's first-draft graphs fail stack and sort, and single edits do
+not repair them under camera noise.
 
 ## 1 Introduction
 
@@ -49,7 +57,8 @@ Contributions:
 1. A complete, reproducible laptop-scale GaP stack: skill library with checks, graph schema
    and interpreter, parallel rehearsal, per-node diagnosis, routed repair loop.
 2. A learned per-node arbiter between a scripted skill and a behavior-cloned policy, trained
-   on paired outcomes from identical states, compared with five other arbitration policies.
+   on paired outcomes from identical states, compared episode by episode with other
+   arbitration policies, including on stacked tasks where the scripted skill wins some states.
 3. SFT and GRPO training of a 2B repair model on simulator rewards, with a held-out task.
 
 ## 2 System
@@ -102,8 +111,9 @@ cells have, applied identically to every method:
 **Executors.** Each node runs one of: the scripted skill; the learned executor (which skips
 the skill's pre-check, since that check encodes the scripted skill's assumptions, but must
 pass the same post-check); *fallback* (skill, then the learned executor from wherever the
-failure left the scene); or *oracle* (skill; on failure, restore the snapshot and run the
-learned executor), an in-simulation upper bound no real robot can run.
+failure left the scene, or the same with the learned executor first); or *oracle* (skill; on
+failure, restore the snapshot and run the learned executor), an in-simulation upper bound no
+real robot can run.
 
 **Learned grasp.** A closed-loop MLP behavior-cloned from a privileged servo demonstrator. It
 observes the nearest object's position and yaw relative to the hand, with millimeter noise,
@@ -135,7 +145,8 @@ readable from the coefficients.
 
 **Policies compared.** always_skill; always_learned; validity_only (skill unless its
 pre-check fails, the gating used in prior agentic manipulation work); fallback_on_failure;
-learned_arbiter; oracle.
+learned_arbiter; oracle; and, on the stacked tasks, arbiter_fallback (the arbiter's choice
+first, the other executor after a failed grasp).
 
 ## 4 Training a small repair model
 
@@ -585,6 +596,9 @@ and no single edit moved them off zero, which leaves the loop with nothing to co
 - The oracle executor restores a simulator snapshot and is not deployable. It is a per-node
   bound, not a per-episode one: it keeps the skill's result whenever the skill passes its
   post-check, even if that grasp later slips, so an always-learned policy can beat it.
+- The stacked-task results rest on one learned grasp and one refit arbiter, and arbiter_fallback
+  was defined after invert's first results; unstack is its only clean test. Some unstack
+  object-split towers fail the reset's settle check and count against every policy.
 - All language models are small local Qwen models; we report no frontier-model rows. The
   authoring comparison uses one draft per instruction; all methods fail stack and sort, so
   those columns do not separate them.

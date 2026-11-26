@@ -338,3 +338,17 @@ splits) before making it. Format: date, decision, why, what it affects.
   Also run on invert and on place and stack (refit arbiter), reported as secondary.
 - Fix in passing: a fallback trace entry now counts the simulated steps of both attempts
   (it counted only the second). No published table shows a fallback row's grasp time.
+
+## 2026-11-26: Control for the second try (learned_retry)
+- Why: arbiter_fallback beats always_learned and fallback_on_failure on invert, and on its
+  first place and stack rows it is above always_learned too. A failed close has no fail edge
+  in the reference graphs, so any second attempt inside the node is an attempt the graph
+  otherwise lacks. The gain could come from switching executor or from trying again at all.
+- `learned_retry`: the learned grasp, and after a failed post-check the learned grasp again
+  from the state the failure left (interpreter executor "retry_learned"). Same budget as
+  arbiter_fallback, no switch.
+- Hypothesis, written before any learned_retry result: on place, stack and sort, where the
+  arbiter almost always picks the learned grasp first and the skill rarely wins, learned_retry
+  matches arbiter_fallback; on invert and unstack, where the stacked grasp fails the learned
+  policy for a reason a retry does not remove (the half-height estimate assumes a cube on
+  the table), arbiter_fallback beats it. Episode-matched sign tests, same seeds, refit arbiter.

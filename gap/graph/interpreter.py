@@ -19,9 +19,11 @@ from gap.types import EpisodeResult, SkillResult, TaskInstance, TraceEntry
 
 # Phase 6b hook: given (node_id, cell, instance) return "skill", "learned", "fallback" (skill,
 # then the learned executor if the skill fails), "fallback_learned" (the same, learned first),
-# or "oracle" (try both from the same snapshot,
+# "retry_learned" (the learned executor twice), or "oracle" (try both from the same snapshot,
 # keep the skill's result if it succeeded, else the learned one; an in-sim upper bound).
 ExecutorPolicy = Callable[[str, Workcell, TaskInstance], str]
+SECOND_TRY = {"fallback": ("skill", "learned"), "fallback_learned": ("learned", "skill"),
+              "retry_learned": ("learned", "learned")}   # (first, after a failed post-check)
 # Phase 6b: runs a node with the learned executor instead of skill.run().
 LearnedRunner = Callable[[Node, Workcell, dict, dict], SkillResult]
 
@@ -99,8 +101,8 @@ def _run_node(graph, node, cell, outputs, executor, learned_runner, visit) -> Tr
         return run_skill(node.id, node.skill, cell, inputs, node.params, executor=kind,
                          learned=learned, visit=visit, error=error)
 
-    if executor in ("fallback", "fallback_learned"):
-        first, second = ("skill", "learned") if executor == "fallback" else ("learned", "skill")
+    if executor in SECOND_TRY:
+        first, second = SECOND_TRY[executor]
         entry = attempt(first)
         if entry.post_ok or error:
             return entry

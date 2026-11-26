@@ -10,6 +10,8 @@ has a learned executor (fallback.SKILL_TYPE) are arbitrated; every other node ru
   learned_arbiter     executor with the higher predicted success
   arbiter_fallback    learned_arbiter's choice first, the other executor after a failure, as
                       in fallback_on_failure (DECISIONS 2026-11-26, arbiter with a second try)
+  learned_retry       the learned policy, and again after a failure (control: a second try
+                      without switching executor)
   oracle              best executor per node in hindsight (upper bound; tries the skill,
                       restores the snapshot if it failed, then runs the learned policy)
 
@@ -31,7 +33,8 @@ from gap.graph.schema import Graph
 from gap.skills import registry
 
 POLICIES = ("always_skill", "always_learned", "validity_only",
-            "fallback_on_failure", "learned_arbiter", "oracle", "arbiter_fallback")
+            "fallback_on_failure", "learned_arbiter", "oracle", "arbiter_fallback",
+            "learned_retry")
 WIDTH_BAND = (0.02, 0.055)   # verify_grasp band covering the 3-5 cm variants
 
 
@@ -58,6 +61,8 @@ def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed
             return "skill"
         if name == "always_learned":
             return "learned"
+        if name == "learned_retry":
+            return "retry_learned"
         if name == "validity_only":
             skill = registry.get(node.skill)()
             return "skill" if skill.pre(cell, {}, skill.resolve_params(node.params))[0] else "learned"

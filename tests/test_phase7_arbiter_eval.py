@@ -52,6 +52,23 @@ def test_fallback_learned_runs_the_skill_after_the_learned_executor_fails(cell):
     assert close.executor == "fallback_learned" and close.post_ok and res.success
 
 
+def test_retry_learned_runs_the_learned_executor_twice(cell):
+    from gap.graph.interpreter import run_graph
+    from gap.sim.task_sampler import sample
+    from gap.skills.grasp import CloseGripper
+    from gap.types import SkillResult
+    calls = []
+
+    def learned(node, c, inputs, params):           # fails once, then closes like the skill
+        calls.append(1)
+        return CloseGripper().run(c, inputs, params) if len(calls) > 1 else SkillResult(False)
+    res = run_graph(reference_graph("place"), cell, sample("place", 50_001),
+                    executor_policy=lambda n, c, i: "retry_learned" if n == "close" else "skill",
+                    learned_runner=learned)
+    close = next(t for t in res.trace if t.node_id == "close")
+    assert close.executor == "retry_learned" and len(calls) == 2 and res.success
+
+
 def test_arbiter_picks_the_executor_that_wins_in_that_region():
     from gap.arbiter.arbiter import Arbiter
     rng = np.random.default_rng(0)
