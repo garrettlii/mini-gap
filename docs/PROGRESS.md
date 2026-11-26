@@ -2,6 +2,27 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 7: stacked tasks and a second try inside the grasp node
+- Works: tasks invert and unstack (`start_stacked` takes a list of pairs; unstack's reference
+  graph succeeded on 24/24 dev seeds per split probed, nominal and pose, ground-truth
+  perception). Arbiter refit on place, stack and invert paired states
+  (runs/20261126-020348_train_arbiter). Policies arbiter_fallback and learned_retry
+  (interpreter executors fallback_learned, retry_learned). Demo video gains an invert clip.
+  `uv run pytest --phase 7` 91 passed; `ruff check .` clean.
+- Findings (results/eval_arbiter_invert, eval_arbiter_unstack, eval_arbiter_refit, paired_*,
+  retry_*): on invert the scripted close wins some stacked-grasp states and the refit arbiter
+  beats both single executors episode by episode, with faster grasps; on unstack, with no
+  unstack data, it transfers. A second try inside the grasp node is the bigger effect: the
+  learned grasp retried beats always_learned on every task; switching executor instead adds
+  to that on unstack (pre-registered), not on the table tasks, not significantly on invert.
+- Decisions: DECISIONS 2026-11-26 entries invert, unstack (with the reset finding),
+  arbiter_fallback, learned_retry.
+- Next: a settle tolerance that grows with stack height; fail edges from grasp nodes in the
+  reference graphs, now that a retry is known to help; an arbiter trained on outcomes with
+  the second try (pick the first executor to maximize success after the fallback).
+- Open: some unstack object-split towers fail reset and count against every policy;
+  arbiter_fallback was designed after seeing invert's first rows (unstack is its clean test).
+
 ## Session 6: wrist-camera learned grasp
 - Works: gap/arbiter/wrist.py, a learned grasp that finds the object in the wrist RGB-D image
   (hand-eye calibration error and depth noise under the noise model); train_arbiter --obs
