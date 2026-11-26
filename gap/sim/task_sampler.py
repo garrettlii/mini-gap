@@ -9,11 +9,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-import yaml
 import numpy as np
+import yaml
 
 from gap.sim import model_builder as mb
-from gap.types import TaskInstance, Pose
+from gap.types import Pose, TaskInstance
 
 CONFIG = Path(__file__).resolve().parents[2] / "configs" / "tasks.yaml"
 
@@ -37,7 +37,7 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
       gets a variant (features "<cube>_variant", an index into model_builder.VARIANT_NAMES),
       drawn after all poses, and rests at that variant's half height.
     """
-    from gap.eval.splits import SPLITS, apply_split   # plain definitions, no sim imports
+    from gap.eval.splits import SPLITS, apply_split  # plain definitions, no sim imports
 
     rng = np.random.default_rng(seed)
     cfg = task_config() if split == "nominal" else apply_split(task_config(), SPLITS[split])
@@ -56,9 +56,9 @@ def sample(task: str, seed: int, split: str = "nominal") -> TaskInstance:
         "green_cube" : (0.90, -0.60)
     }
 
-    object_poses = dict()
-    features = dict()
-    placed = list()
+    object_poses = {}
+    features = {}
+    placed = []
     distractors = [c for c in mb.CUBES if c not in used][: cfg.get("n_distractors", 0)]
     in_envelope = [c for c in mb.CUBES if c in used] + distractors
     for cube in in_envelope + [c for c in mb.CUBES if c not in in_envelope]:

@@ -16,14 +16,14 @@ Example: graphs/place_example.json
 from __future__ import annotations
 
 import re
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ID_RE = r"^[a-z][a-z0-9_]{0,31}$"
 REF_RE = re.compile(r"^([a-z][a-z0-9_]*)\.([a-z][a-z0-9_]*)$")
 
-InputValue = Union[str, float, int, bool]
+InputValue = str | float | int | bool
 
 
 class Node(BaseModel):

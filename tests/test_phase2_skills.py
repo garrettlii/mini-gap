@@ -6,7 +6,7 @@ Add one test per skill as you implement it: 20 dev seeds, assert its post-check.
 import numpy as np
 import pytest
 
-import gap.skills as skills
+from gap import skills
 from gap.skills.base import Skill
 
 pytestmark = pytest.mark.phase(2)

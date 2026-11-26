@@ -12,8 +12,8 @@ import numpy as np
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from gap.sim import model_builder as mb  # noqa: E402
-from gap.utils.video import save_png  # noqa: E402
+from gap.sim import model_builder as mb
+from gap.utils.video import save_png
 
 ok = True
 
@@ -46,14 +46,14 @@ try:
         frames.append(r.render())
     out = save_png(np.concatenate(frames, axis=1), "runs/sanity/cameras.png")
     report("offscreen render", True, f"wrote {out}")
-except Exception as e:
+except Exception as e:  # noqa: BLE001 -- report any failure
     report("offscreen render", False, str(e))
 
 if platform.system() == "Darwin" and platform.machine() == "arm64":
     try:
         import mlx.core as mx
         report("mlx", True, f"default device {mx.default_device()}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- report any failure
         report("mlx", False, str(e))
     gb = int(subprocess.check_output(["sysctl", "-n", "hw.memsize"])) // 2**30
     size = "0.8B" if gb < 12 else "2B" if gb < 20 else "4B (4-bit)"

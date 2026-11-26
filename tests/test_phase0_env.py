@@ -38,7 +38,7 @@ def test_home_pose_is_stable(model):
 def test_offscreen_render(model):
     try:
         r = mujoco.Renderer(model, 120, 160)
-    except Exception as e:  # headless CI without GL
+    except Exception as e:  # noqa: BLE001 -- headless CI without GL raises varied errors
         pytest.skip(f"no offscreen GL context: {e}")
     d = mujoco.MjData(model)
     mujoco.mj_resetDataKeyframe(model, d, model.key(mb.HOME_KEY).id)
@@ -74,7 +74,7 @@ def test_wilson_interval():
 
 
 def test_skill_catalog():
-    import gap.skills as skills
+    from gap import skills
     assert len(skills.names()) == 10
     text = skills.catalog_text()
     assert "plan_top_grasp" in text and "approach_height" in text
@@ -86,6 +86,7 @@ def test_skill_catalog():
 
 def test_example_graph_parses():
     from pathlib import Path
+
     from gap.graph.schema import Graph
     g = Graph.model_validate_json(Path("graphs/place_example.json").read_text())
     assert g.parse_ref("find.pose") == ("find", "pose")
@@ -96,8 +97,10 @@ def test_example_graph_parses():
 
 
 def test_edit_ops_parse():
+    from pydantic import ValidationError
+
     from gap.graph.edits import parse_edit
     e = parse_edit('{"op": "set_param", "node": "close", "param": "force", "value": 0.8}')
     assert e.op == "set_param" and e.value == 0.8
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         parse_edit('{"op": "teleport", "node": "close"}')

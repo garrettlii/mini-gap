@@ -130,7 +130,7 @@ def extract_json(text: str) -> dict:
     t = text.strip()
     if "```" in t:
         parts = t.split("```")
-        t = next((p[4:] if p.startswith("json") else p for p in parts[1::2]), t)
+        t = next((p.removeprefix("json") for p in parts[1::2]), t)
     start, end = t.find("{"), t.rfind("}")
     if start < 0 or end <= start:
         raise ValueError("no JSON object in model output")

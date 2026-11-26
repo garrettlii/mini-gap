@@ -218,3 +218,15 @@ splits) before making it. Format: date, decision, why, what it affects.
   metrics.json into two cells (start_graph, after_loop) with split = bug name (or "planner").
   results/loop_bugs.json holds the twelve seeded-bug loops (3 tasks x 4 bugs, 4B specialist,
   clean sensor); results/loop_deployed.json the three deployed-condition loops.
+
+## 2026-11-26: Lint cleanup across done modules
+- `ruff check .` (ruff 0.17 default rules) reported 41 findings, mostly in modules finished
+  before those rules applied. All fixes keep behavior: sorted imports, literals instead of
+  dict()/list(), `X | Y` unions (pydantic treats them like Union), removeprefix, unused noqa
+  comments removed.
+- runs._git_rev catches only OSError and CalledProcessError (git missing or not a repo).
+  test_edit_ops_parse expects pydantic.ValidationError, the error parse_edit documents.
+- Kept broad catches where reporting any failure is the point (sanity_check.py diagnostics,
+  the headless-GL skip in test_phase0_env), marked with a reasoned noqa.
+- RUF012 is ignored for gap/skills: a skill's inputs/outputs/params are class-level
+  declarations already typed ClassVar on Skill in base.py; ruff does not see the base class.

@@ -5,7 +5,7 @@ Edits are cheap to validate, easy to diff, and short enough for a 2B model to le
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
@@ -46,7 +46,7 @@ class RemoveNode(_Op):
     node: str
 
 
-EditOp = Annotated[Union[SetParam, SwapSkill, InsertAfter, AddEdge, RemoveNode], Field(discriminator="op")]
+EditOp = Annotated[SetParam | SwapSkill | InsertAfter | AddEdge | RemoveNode, Field(discriminator="op")]
 EDIT_ADAPTER: TypeAdapter = TypeAdapter(EditOp)
 
 

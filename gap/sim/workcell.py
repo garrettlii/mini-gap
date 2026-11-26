@@ -19,7 +19,7 @@ import mujoco
 import numpy as np
 
 from gap.sim import model_builder as mb
-from gap.types import State, TaskInstance, Pose
+from gap.types import Pose, State, TaskInstance
 
 SETTLE_STEPS = 100   # 0.2 s at dt = 2 ms: soft contacts come to rest
 VIDEO_FPS = 25       # frames per sim second when frame_sink is set
@@ -67,7 +67,7 @@ class Workcell:
         Return plain Python types (Pose, float, list), not numpy views into MjData:
         views change under you when the sim steps.
         """
-        state = dict()
+        state = {}
 
         state["time"] = float(self.data.time)
 

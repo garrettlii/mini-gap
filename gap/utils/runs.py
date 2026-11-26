@@ -39,7 +39,7 @@ def to_jsonable(obj: Any) -> Any:
 def _git_rev() -> str:
     try:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
-    except Exception:
+    except (OSError, subprocess.CalledProcessError):   # git missing, or not a repo
         return "nogit"
 
 
