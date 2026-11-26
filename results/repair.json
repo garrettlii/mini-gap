@@ -1,0 +1,88 @@
+{
+ "cells": [
+  {
+   "method": "zero_shot",
+   "split": "repair",
+   "task": "place",
+   "successes": 7,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.23333333333333334
+  },
+  {
+   "method": "sft",
+   "split": "repair",
+   "task": "place",
+   "successes": 20,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.6666666666666666
+  },
+  {
+   "method": "grpo",
+   "split": "repair",
+   "task": "place",
+   "successes": 22,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.7333333333333333
+  },
+  {
+   "method": "zero_shot",
+   "split": "repair",
+   "task": "stack",
+   "successes": 12,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.4
+  },
+  {
+   "method": "sft",
+   "split": "repair",
+   "task": "stack",
+   "successes": 19,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.6333333333333333
+  },
+  {
+   "method": "grpo",
+   "split": "repair",
+   "task": "stack",
+   "successes": 24,
+   "n": 30,
+   "mean_before": 0.0,
+   "mean_after": 0.8
+  },
+  {
+   "method": "zero_shot",
+   "split": "repair",
+   "task": "sort",
+   "successes": 8,
+   "n": 30,
+   "mean_before": 0.0020833333333333333,
+   "mean_after": 0.21875
+  },
+  {
+   "method": "sft",
+   "split": "repair",
+   "task": "sort",
+   "successes": 16,
+   "n": 30,
+   "mean_before": 0.0020833333333333333,
+   "mean_after": 0.44375
+  },
+  {
+   "method": "grpo",
+   "split": "repair",
+   "task": "sort",
+   "successes": 24,
+   "n": 30,
+   "mean_before": 0.0020833333333333333,
+   "mean_after": 0.59375
+  }
+ ],
+ "sources": [
+  "20261125-182531_eval_repair"
+ ]
+}

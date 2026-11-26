@@ -215,7 +215,32 @@ critic, each written once per (task, instruction) by the local 4B model.
 Fraction of held-out bugs where the model's edit raised success.
 
 <!-- table: repair by=task -->
+| method | place | stack | sort |
+|---|---|---|---|
+| zero_shot | 0.23 [0.12, 0.41] (7/30) | 0.40 [0.25, 0.58] (12/30) | 0.27 [0.14, 0.44] (8/30) |
+| sft | 0.67 [0.49, 0.81] (20/30) | 0.63 [0.46, 0.78] (19/30) | 0.53 [0.36, 0.70] (16/30) |
+| grpo | 0.73 [0.56, 0.86] (22/30) | 0.80 [0.63, 0.90] (24/30) | 0.80 [0.63, 0.90] (24/30) |
 <!-- /table -->
+
+Rows: zero_shot is the untrained 2B model, sft the SFT adapter, grpo SFT followed by GRPO.
+Every problem starts from a graph that fails all rehearsal runs. The point estimates rise from
+zero-shot to SFT to GRPO on every task, including sort, which no training data came from.
+With 30 problems per task the intervals are wide: zero-shot vs GRPO separates on every task,
+while SFT vs GRPO overlaps everywhere, so GRPO's gain over SFT is suggestive, not established.
+
+Reading the edits (runs/*_eval_repair/problems.jsonl) qualifies this. GRPO learned to set
+the broken parameter back to its default value (grasp yaw offset and depth to zero, the
+verification band's upper limit near its default) on every problem of those families. That
+is the right repair for these bugs and it transfers to nodes of a task never seen in
+training, but the held-out bugs come from the same four families as the training bugs, so
+this shows transfer across tasks and nodes, not repair of new kinds of bugs. No model fixes
+the family where the band's lower limit is set too high: all three edit the upper limit. The
+teacher never fixed that family either, so SFT had no examples of it. No edit deleted a
+check, raised retry budgets, or padded wait times, the reward-hacking patterns we looked for.
+
+During GRPO the four samples drawn for a prompt became identical partway through training,
+which gives GRPO no learning signal on that prompt. A higher sampling temperature or more
+distinct prompts per update are the obvious next steps.
 
 ## 6 Limitations
 
