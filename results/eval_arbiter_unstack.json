@@ -158,78 +158,78 @@
    "method": "always_skill",
    "split": "object",
    "task": "unstack",
-   "successes": 26,
+   "successes": 30,
    "n": 100,
-   "mean_sim_s": 22.20239999999661,
-   "grasp_s": 61.2,
-   "grasps": 223,
-   "skill_grasps": 223
+   "mean_sim_s": 25.168599999996076,
+   "grasp_s": 69.60000000000001,
+   "grasps": 252,
+   "skill_grasps": 252
   },
   {
    "method": "always_learned",
    "split": "object",
    "task": "unstack",
-   "successes": 34,
+   "successes": 40,
    "n": 100,
-   "mean_sim_s": 24.57019999999714,
-   "grasp_s": 183.48,
-   "grasps": 222,
+   "mean_sim_s": 27.609999999996624,
+   "grasp_s": 205.36,
+   "grasps": 250,
    "skill_grasps": 0
   },
   {
    "method": "validity_only",
    "split": "object",
    "task": "unstack",
-   "successes": 30,
+   "successes": 34,
    "n": 100,
-   "mean_sim_s": 23.80499999999636,
-   "grasp_s": 91.44,
-   "grasps": 231,
-   "skill_grasps": 207
+   "mean_sim_s": 26.80419999999581,
+   "grasp_s": 103.14,
+   "grasps": 260,
+   "skill_grasps": 235
   },
   {
    "method": "fallback_on_failure",
    "split": "object",
    "task": "unstack",
-   "successes": 39,
+   "successes": 44,
    "n": 100,
-   "mean_sim_s": 24.50099999999635,
-   "grasp_s": 101.62,
-   "grasps": 232,
-   "skill_grasps": 178
+   "mean_sim_s": 27.545599999995783,
+   "grasp_s": 113.92,
+   "grasps": 261,
+   "skill_grasps": 204
   },
   {
    "method": "learned_arbiter",
    "split": "object",
    "task": "unstack",
-   "successes": 36,
+   "successes": 43,
    "n": 100,
-   "mean_sim_s": 24.890599999997054,
-   "grasp_s": 147.38,
-   "grasps": 232,
-   "skill_grasps": 102
+   "mean_sim_s": 28.014799999996498,
+   "grasp_s": 165.06,
+   "grasps": 261,
+   "skill_grasps": 114
   },
   {
    "method": "oracle",
    "split": "object",
    "task": "unstack",
-   "successes": 38,
+   "successes": 44,
    "n": 100,
-   "mean_sim_s": 24.961799999996277,
-   "grasp_s": 108.68,
-   "grasps": 234,
-   "skill_grasps": 179
+   "mean_sim_s": 28.045399999995702,
+   "grasp_s": 121.10000000000001,
+   "grasps": 263,
+   "skill_grasps": 205
   },
   {
    "method": "arbiter_fallback",
    "split": "object",
    "task": "unstack",
-   "successes": 37,
+   "successes": 44,
    "n": 100,
-   "mean_sim_s": 25.33379999999711,
-   "grasp_s": 158.32,
-   "grasps": 234,
-   "skill_grasps": 94
+   "mean_sim_s": 28.46099999999656,
+   "grasp_s": 176.3,
+   "grasps": 263,
+   "skill_grasps": 106
   },
   {
    "method": "learned_retry",
@@ -257,16 +257,17 @@
    "method": "learned_retry",
    "split": "object",
    "task": "unstack",
-   "successes": 34,
+   "successes": 40,
    "n": 100,
-   "mean_sim_s": 24.964199999997174,
-   "grasp_s": 197.34,
-   "grasps": 224,
+   "mean_sim_s": 28.18319999999679,
+   "grasp_s": 223.12,
+   "grasps": 253,
    "skill_grasps": 0
   }
  ],
  "sources": [
   "20261126-024558_eval",
-  "20261126-032155_eval"
+  "20261126-032155_eval",
+  "20261126-063114_eval"
  ]
 }
