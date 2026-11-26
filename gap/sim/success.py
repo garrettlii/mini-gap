@@ -25,7 +25,7 @@ def check(task: str, state: State, task_cfg: dict, half: dict[str, float] | None
     place: object center inside the zone's xy square, resting (z near CUBE_HALF),
            and gripper open if required
     stack, invert: top cube xy within xy_tol of bottom cube, and z about one cube height higher
-    sort:  every object in its assigned zone
+    sort, unstack:  every object in its assigned zone
     Also require objects to be at rest (check velocity, or step a few times and compare);
     a cube sliding through the zone is not a success.
 
@@ -45,7 +45,7 @@ def check(task: str, state: State, task_cfg: dict, half: dict[str, float] | None
         return (np.linalg.norm(top[:2] - bottom[:2]) <= c["xy_tol"]
                 and abs(top[2] - bottom[2] - h[c["top"]] - h[c["bottom"]]) <= Z_TOL
                 and abs(bottom[2] - h[c["bottom"]]) <= Z_TOL)
-    if task == "sort":
+    if task in ("sort", "unstack"):
         return all(_resting_in_zone(obj[o].pos, z, h[o]) for o, z in c["assign"].items())
     raise ValueError(f"unknown task {task!r}")
 

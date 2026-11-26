@@ -33,6 +33,12 @@ tasks:
     instructions: ["put the red cube on top of the green cube", "flip the stack so red is on top"]
     paraphrases: ["move green off red, then set red on green", "swap the two blocks in the tower"]   # instruction split only
     success: {top: red_cube, bottom: green_cube, xy_tol: 0.015}
+  unstack:                     # a three-cube tower, sorted (DECISIONS 2026-11-26)
+    objects: [red_cube, green_cube, blue_cube]
+    start_stacked: [{top: green_cube, bottom: red_cube}, {top: blue_cube, bottom: green_cube}]
+    instructions: ["take the tower apart: blue and red in zone A, green in zone B"]
+    paraphrases: ["unstack the blocks, red and blue to the yellow square, green to the cyan one"]   # instruction split only
+    success: {assign: {red_cube: zone_a, blue_cube: zone_a, green_cube: zone_b}}
   sort:                        # held out from Qwen training in Phase 6
     objects: [red_cube, green_cube, blue_cube]
     instructions: ["put red and blue in zone A and green in zone B"]

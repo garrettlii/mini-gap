@@ -233,6 +233,20 @@ def test_invert_starts_as_the_stack_goal(cell, split):
     assert g[:2] == r[:2] and g[2] == pytest.approx(2 * half["red_cube"] + half["green_cube"])
 
 
+def test_unstack_starts_as_a_three_cube_tower(cell):
+    """Blue on green on red at reset; no cube is in its assigned zone yet."""
+    from gap.sim import model_builder as mb
+    from gap.sim.success import check
+    from gap.sim.task_sampler import sample, task_config
+    inst = sample("unstack", 50_000, "object")
+    half = {c: mb.half_height(int(inst.features.get(f"{c}_variant", 0))) for c in mb.CUBES}
+    state = cell.reset(inst)                     # raises if the tower does not settle
+    assert not check("unstack", state, task_config()["tasks"]["unstack"], half)
+    r, g, b = (inst.object_poses[f"{c}_cube"].pos for c in ("red", "green", "blue"))
+    assert r[:2] == g[:2] == b[:2]
+    assert b[2] == pytest.approx(2 * half["red_cube"] + 2 * half["green_cube"] + half["blue_cube"])
+
+
 def test_paired_comparison_counts_discordant_episodes(tmp_path):
     import json
 

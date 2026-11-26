@@ -301,3 +301,18 @@ splits) before making it. Format: date, decision, why, what it affects.
   stack and sort only the refit arbiter is re-run; the fixed policies' rows there stand.
 - publish now lets a later run's cell replace an earlier one with the same method, split and
   task (needed after a resumed margin sweep redid part of a split).
+
+## 2026-11-26: Unstack task: does the arbiter's rule transfer to a taller stack?
+- Hypothesis, written before any unstack result: the arbiter refit on invert learned a rule
+  that transfers ("an object that stands higher than a table-resting one: scripted grasp"),
+  so on a task it never saw, with a two-level stack, it should beat always_learned and
+  always_skill. The learned grasp's wrist estimate (half height = top height / 2) is further
+  off on a two-level stack, so it should fail more there.
+- Task `unstack`: blue on green on red at the start; success is the sort check (blue and red
+  in zone A, green in zone B). Reference graph grasps blue (top), then green, then red.
+- `start_stacked` becomes a list of {top, bottom} pairs applied in order (a dict is still
+  read as one pair); the top cube rests on the bottom cube's top: bottom z + both half heights.
+  Invert instances are unchanged.
+- Evaluation: the invert-refit arbiter (runs/20261126-020348_train_arbiter) with no unstack
+  data, the six policies, splits nominal, pose and object, eval seeds. No distractors split:
+  all three cubes are in use, so it would repeat nominal scene for scene.
