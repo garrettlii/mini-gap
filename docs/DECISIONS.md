@@ -362,3 +362,24 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Hypothesis, written before the run: on place both lift graph_multi above
   graph_multi+learned_arbiter; on stack and sort nothing changes, since the drafted graphs
   fail there for reasons outside the grasp node (structure and camera noise, section 5.2).
+
+## 2026-11-26: Reset settle tolerance grows with the stack beneath an object
+- Why: unstack's object split lost 10 episodes per policy to reset's 1 mm settle check
+  (entry "Unstack task" above). A dev-seed probe (200 seeds, no raise) shows what moves.
+  Each contact beneath an object compresses a little, so a tower sinks about 0.3 mm per
+  level. A cylinder resting on a 3 cm cube also leans about 1.3 degrees and stays there,
+  which carries the object above it 1-1.6 mm sideways. That corrects the earlier entry's
+  "sink": most of the motion is the lean. Neither is the interpenetration jump the check
+  exists to catch.
+- Rule: an object may move 1 mm per contact beneath it while settling: 1 mm on the table
+  (unchanged), 2 mm on one object, 3 mm on two. Reset finds the objects beneath from the
+  instance poses (a tower shares one xy, lower z). Dev probe maxima: 0.89 mm one level up,
+  1.84 mm two levels up. Settling itself is unchanged and the tolerance only decides whether
+  reset raises, so every episode that passed before replays exactly. Only resets that used
+  to raise now run (unstack object split; no invert or table-task reset raised).
+- Rerun: unstack object split, the eight policies (the seven of runs/20261126-024558_eval
+  and learned_retry), same models and eval seeds. A later run's rows replace the earlier
+  ones in publish and in the paired comparisons.
+- Expected, written before the rerun: the 90 object-split episodes per policy that ran
+  before reproduce exactly; each policy's object-split rate rises by at most 10 points; no
+  paired comparison on unstack changes direction.

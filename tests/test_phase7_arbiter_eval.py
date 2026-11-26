@@ -275,6 +275,16 @@ def test_unstack_starts_as_a_three_cube_tower(cell):
     assert b[2] == pytest.approx(2 * half["red_cube"] + 2 * half["green_cube"] + half["blue_cube"])
 
 
+def test_reset_lets_a_leaning_tower_settle(cell):
+    """Dev seed 50010, object split: a cylinder on a 3 cm cube leans and carries the top cube
+    past 1 mm; the tolerance is 1 mm per contact beneath, so reset accepts it."""
+    from gap.sim.task_sampler import sample
+    inst = sample("unstack", 50_010, "object")
+    cell.reset(inst)
+    top = np.linalg.norm(cell.data.body("blue_cube").xpos - np.array(inst.object_poses["blue_cube"].pos))
+    assert 1e-3 < top < 3e-3
+
+
 def test_paired_comparison_counts_discordant_episodes(tmp_path):
     import json
 

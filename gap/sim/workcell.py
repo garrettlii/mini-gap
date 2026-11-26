@@ -23,7 +23,8 @@ from gap.types import Pose, State, TaskInstance
 
 SETTLE_STEPS = 100   # 0.2 s at dt = 2 ms: soft contacts come to rest
 VIDEO_FPS = 25       # frames per sim second when frame_sink is set
-SETTLE_TOL = 1e-3    # meters; a cube moving more than this while settling spawned badly
+SETTLE_TOL = 1e-3    # meters per contact beneath an object (DECISIONS 2026-11-26): moving
+                     # more than this while settling means it spawned badly
 # Overhead RGB-D noise (camera_noise=True), see DECISIONS 2026-11-24 Phase 6b.
 CALIB_ROT_SD = np.deg2rad(0.5)    # extrinsic rotation error per axis, per episode
 CALIB_POS_SD = 0.005              # extrinsic translation error per axis, meters
@@ -32,6 +33,12 @@ DEPTH_SD_COEF = 2.85e-3           # depth noise sigma = coef * z^2 (Kinect-style
 WRIST_ROT_SD = np.deg2rad(0.5)
 WRIST_POS_SD = 0.002
 NOISY_CAMERAS = ("overhead", "wrist")
+
+
+def _beneath(name: str, poses: dict[str, Pose]) -> int:
+    """How many objects a spawn pose stacks this one on (a tower shares one xy)."""
+    x, y, z = poses[name].pos
+    return sum(p.pos[0] == x and p.pos[1] == y and p.pos[2] < z for p in poses.values())
 
 
 class Workcell:
@@ -126,7 +133,8 @@ class Workcell:
           - A freejoint's qpos is 7 numbers [x y z qw qx qy qz]; find its start index with
             model.jnt_qposadr[model.joint("red_cube_joint").id]. Zero its qvel too.
           - Call mujoco.mj_forward afterwards so xpos is up to date.
-          - Let objects settle for a few dozen steps and check none moved more than 1 mm;
+          - Let objects settle for a few dozen steps and check none moved more than 1 mm
+            per contact beneath it (a stacked object sinks and leans a little more);
             a cube that jumps means it spawned interpenetrating something.
         """
         m, d = self.model, self.data
@@ -145,7 +153,7 @@ class Workcell:
         mujoco.mj_step(m, d, SETTLE_STEPS)
         for name, p0 in start.items():
             moved = float(np.linalg.norm(d.body(name).xpos - p0))
-            if moved > SETTLE_TOL:
+            if moved > SETTLE_TOL * (1 + _beneath(name, instance.object_poses)):
                 raise RuntimeError(f"{name} moved {moved * 1e3:.1f} mm while settling "
                                    f"(seed {instance.seed}): it spawned overlapping something")
         return self.get_state()
