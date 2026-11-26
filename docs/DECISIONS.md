@@ -316,6 +316,12 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Evaluation: the invert-refit arbiter (runs/20261126-020348_train_arbiter) with no unstack
   data, the six policies, splits nominal, pose and object, eval seeds. No distractors split:
   all three cubes are in use, so it would repeat nominal scene for scene.
+- Found after the run: on the object split, towers that stack a cylinder with a 3 cm cube
+  sink 1.4-1.7 mm while settling (soft contacts, three levels), past reset's 1 mm spawn
+  check, so reset raises and the episode is scored a failure for every policy. Kept as
+  run rather than loosening the check after seeing results: it lowers every policy's
+  object-split rate equally and drops out of the episode-matched comparisons. A fix (a
+  settle tolerance that grows with stack height) belongs before any new tower task.
 
 ## 2026-11-26: Arbiter with a second try (arbiter_fallback)
 - Why: on invert nominal and pose, fallback_on_failure leads every other policy, the arbiter

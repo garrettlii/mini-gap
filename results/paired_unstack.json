@@ -1,0 +1,59 @@
+{
+ "comparisons": [
+  {
+   "a": "learned_arbiter",
+   "b": "always_learned",
+   "episodes": 300,
+   "a_only": 31,
+   "b_only": 12,
+   "p": 0.005401572654591291,
+   "sources": [
+    "20261126-024558_eval"
+   ]
+  },
+  {
+   "a": "learned_arbiter",
+   "b": "always_skill",
+   "episodes": 300,
+   "a_only": 48,
+   "b_only": 16,
+   "p": 7.733076881287027e-05,
+   "sources": [
+    "20261126-024558_eval"
+   ]
+  },
+  {
+   "a": "arbiter_fallback",
+   "b": "fallback_on_failure",
+   "episodes": 300,
+   "a_only": 24,
+   "b_only": 20,
+   "p": 0.651587827208914,
+   "sources": [
+    "20261126-024558_eval"
+   ]
+  },
+  {
+   "a": "arbiter_fallback",
+   "b": "learned_arbiter",
+   "episodes": 300,
+   "a_only": 28,
+   "b_only": 0,
+   "p": 7.450580596923828e-09,
+   "sources": [
+    "20261126-024558_eval"
+   ]
+  },
+  {
+   "a": "fallback_on_failure",
+   "b": "learned_arbiter",
+   "episodes": 300,
+   "a_only": 36,
+   "b_only": 12,
+   "p": 0.0007172696733945829,
+   "sources": [
+    "20261126-024558_eval"
+   ]
+  }
+ ]
+}

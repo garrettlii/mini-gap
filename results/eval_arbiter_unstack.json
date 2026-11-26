@@ -1,0 +1,238 @@
+{
+ "cells": [
+  {
+   "method": "always_skill",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 42,
+   "n": 100,
+   "mean_sim_s": 24.348599999996633,
+   "grasp_s": 65.4,
+   "grasps": 247,
+   "skill_grasps": 247
+  },
+  {
+   "method": "always_learned",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 47,
+   "n": 100,
+   "mean_sim_s": 25.659999999997854,
+   "grasp_s": 239.06,
+   "grasps": 239,
+   "skill_grasps": 0
+  },
+  {
+   "method": "validity_only",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 54,
+   "n": 100,
+   "mean_sim_s": 26.66259999999616,
+   "grasp_s": 103.24000000000001,
+   "grasps": 260,
+   "skill_grasps": 224
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 66,
+   "n": 100,
+   "mean_sim_s": 28.26999999999555,
+   "grasp_s": 120.8,
+   "grasps": 269,
+   "skill_grasps": 194
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 55,
+   "n": 100,
+   "mean_sim_s": 26.02439999999691,
+   "grasp_s": 153.78,
+   "grasps": 248,
+   "skill_grasps": 139
+  },
+  {
+   "method": "oracle",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 67,
+   "n": 100,
+   "mean_sim_s": 27.65579999999597,
+   "grasp_s": 121.14,
+   "grasps": 262,
+   "skill_grasps": 193
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "nominal",
+   "task": "unstack",
+   "successes": 71,
+   "n": 100,
+   "mean_sim_s": 29.01659999999601,
+   "grasp_s": 190.02,
+   "grasps": 266,
+   "skill_grasps": 127
+  },
+  {
+   "method": "always_skill",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 52,
+   "n": 100,
+   "mean_sim_s": 26.259799999996403,
+   "grasp_s": 72.9,
+   "grasps": 255,
+   "skill_grasps": 255
+  },
+  {
+   "method": "always_learned",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 52,
+   "n": 100,
+   "mean_sim_s": 26.328399999997647,
+   "grasp_s": 224.98000000000002,
+   "grasps": 239,
+   "skill_grasps": 0
+  },
+  {
+   "method": "validity_only",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 57,
+   "n": 100,
+   "mean_sim_s": 27.47799999999619,
+   "grasp_s": 89.32000000000001,
+   "grasps": 263,
+   "skill_grasps": 249
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 71,
+   "n": 100,
+   "mean_sim_s": 29.698799999995448,
+   "grasp_s": 107.96000000000001,
+   "grasps": 277,
+   "skill_grasps": 218
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 61,
+   "n": 100,
+   "mean_sim_s": 26.904399999996652,
+   "grasp_s": 145.78,
+   "grasps": 249,
+   "skill_grasps": 140
+  },
+  {
+   "method": "oracle",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 72,
+   "n": 100,
+   "mean_sim_s": 28.867399999995918,
+   "grasp_s": 116.3,
+   "grasps": 267,
+   "skill_grasps": 214
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "pose",
+   "task": "unstack",
+   "successes": 72,
+   "n": 100,
+   "mean_sim_s": 29.028199999996176,
+   "grasp_s": 169.02,
+   "grasps": 262,
+   "skill_grasps": 133
+  },
+  {
+   "method": "always_skill",
+   "split": "object",
+   "task": "unstack",
+   "successes": 26,
+   "n": 100,
+   "mean_sim_s": 22.20239999999661,
+   "grasp_s": 61.2,
+   "grasps": 223,
+   "skill_grasps": 223
+  },
+  {
+   "method": "always_learned",
+   "split": "object",
+   "task": "unstack",
+   "successes": 34,
+   "n": 100,
+   "mean_sim_s": 24.57019999999714,
+   "grasp_s": 183.48,
+   "grasps": 222,
+   "skill_grasps": 0
+  },
+  {
+   "method": "validity_only",
+   "split": "object",
+   "task": "unstack",
+   "successes": 30,
+   "n": 100,
+   "mean_sim_s": 23.80499999999636,
+   "grasp_s": 91.44,
+   "grasps": 231,
+   "skill_grasps": 207
+  },
+  {
+   "method": "fallback_on_failure",
+   "split": "object",
+   "task": "unstack",
+   "successes": 39,
+   "n": 100,
+   "mean_sim_s": 24.50099999999635,
+   "grasp_s": 101.62,
+   "grasps": 232,
+   "skill_grasps": 178
+  },
+  {
+   "method": "learned_arbiter",
+   "split": "object",
+   "task": "unstack",
+   "successes": 36,
+   "n": 100,
+   "mean_sim_s": 24.890599999997054,
+   "grasp_s": 147.38,
+   "grasps": 232,
+   "skill_grasps": 102
+  },
+  {
+   "method": "oracle",
+   "split": "object",
+   "task": "unstack",
+   "successes": 38,
+   "n": 100,
+   "mean_sim_s": 24.961799999996277,
+   "grasp_s": 108.68,
+   "grasps": 234,
+   "skill_grasps": 179
+  },
+  {
+   "method": "arbiter_fallback",
+   "split": "object",
+   "task": "unstack",
+   "successes": 37,
+   "n": 100,
+   "mean_sim_s": 25.33379999999711,
+   "grasp_s": 158.32,
+   "grasps": 234,
+   "skill_grasps": 94
+  }
+ ],
+ "sources": [
+  "20261126-024558_eval"
+ ]
+}

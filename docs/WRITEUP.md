@@ -375,6 +375,60 @@ the refit arbiter still matches always_learned episode by episode:
 | learned_arbiter vs always_learned | 900 | 5 | 7 | 0.77 |
 <!-- /paired -->
 
+**A taller stack the arbiter never saw.** Unstack starts from a blue-green-red tower; two of
+its three grasps take a cube off another cube. The arbiter is the one refit on invert, with
+no unstack data; the hypothesis that its stacked-grasp rule transfers was logged before the
+run. Splits nominal, pose and object (with every cube in use, the distractor split would
+repeat nominal). The table adds arbiter_fallback: the arbiter's choice first and, after a
+failed grasp, the other executor from the state the failure left, the same second try
+fallback_on_failure gets.
+
+<!-- table: eval_arbiter_unstack -->
+| method | nominal | pose | object |
+|---|---|---|---|
+| always_skill | 0.42 [0.33, 0.52] (42/100) | 0.52 [0.42, 0.62] (52/100) | 0.26 [0.18, 0.35] (26/100) |
+| always_learned | 0.47 [0.38, 0.57] (47/100) | 0.52 [0.42, 0.62] (52/100) | 0.34 [0.25, 0.44] (34/100) |
+| validity_only | 0.54 [0.44, 0.63] (54/100) | 0.57 [0.47, 0.66] (57/100) | 0.30 [0.22, 0.40] (30/100) |
+| fallback_on_failure | 0.66 [0.56, 0.75] (66/100) | 0.71 [0.61, 0.79] (71/100) | 0.39 [0.30, 0.49] (39/100) |
+| learned_arbiter | 0.55 [0.45, 0.64] (55/100) | 0.61 [0.51, 0.70] (61/100) | 0.36 [0.27, 0.46] (36/100) |
+| oracle | 0.67 [0.57, 0.75] (67/100) | 0.72 [0.63, 0.80] (72/100) | 0.38 [0.29, 0.48] (38/100) |
+| arbiter_fallback | 0.71 [0.61, 0.79] (71/100) | 0.72 [0.63, 0.80] (72/100) | 0.37 [0.28, 0.47] (37/100) |
+<!-- /table -->
+
+<!-- paired: paired_unstack -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_arbiter vs always_learned | 300 | 31 | 12 | 0.0054 |
+| learned_arbiter vs always_skill | 300 | 48 | 16 | 7.7e-05 |
+| arbiter_fallback vs fallback_on_failure | 300 | 24 | 20 | 0.65 |
+| arbiter_fallback vs learned_arbiter | 300 | 28 | 0 | 7.5e-09 |
+| fallback_on_failure vs learned_arbiter | 300 | 36 | 12 | 0.00072 |
+<!-- /paired -->
+
+<!-- sweep: eval_arbiter_unstack methods=always_skill,always_learned,learned_arbiter,fallback_on_failure,arbiter_fallback -->
+| method | success | grasps by skill | s per grasp |
+|---|---|---|---|
+| always_skill | 0.40 [0.35, 0.46] (120/300) | 1.00 [0.99, 1.00] (725/725) | 0.28 |
+| always_learned | 0.44 [0.39, 0.50] (133/300) | 0.00 [0.00, 0.01] (0/700) | 0.93 |
+| learned_arbiter | 0.51 [0.45, 0.56] (152/300) | 0.52 [0.49, 0.56] (381/729) | 0.61 |
+| fallback_on_failure | 0.59 [0.53, 0.64] (176/300) | 0.76 [0.73, 0.79] (590/778) | 0.42 |
+| arbiter_fallback | 0.60 [0.54, 0.65] (180/300) | 0.46 [0.43, 0.50] (354/762) | 0.68 |
+<!-- /sweep -->
+
+The rule transfers: on a task it never saw, the arbiter again beats both single executors
+episode by episode, and runs faster grasps than always_learned. But a second try is worth
+more than the choice. fallback_on_failure is ahead of the arbiter here, and giving the
+arbiter the same second try lifts it to fallback_on_failure's level without passing it:
+the episode-matched counts are close to even, so there is no evidence that the arbiter's
+ordering adds success once both policies may retry with the other executor. It costs time,
+since the arbiter often starts with the slower learned grasp. (arbiter_fallback never loses
+an episode to learned_arbiter, as expected: the second executor runs only after a failure.)
+
+Some object-split towers (a cylinder stacked with a 3 cm cube) sink more than the reset's
+settle check allows. Those episodes end before the first node and count as failures for
+every policy, so they lower every object-split rate equally and leave the paired
+comparisons unchanged.
+
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 
 Free-form code over the same skills, a single planner call, and planner plus structure
