@@ -10,6 +10,9 @@ has a learned executor (fallback.SKILL_TYPE) are arbitrated; every other node ru
   learned_arbiter     executor with the higher predicted success
   arbiter_fallback    learned_arbiter's choice first, the other executor after a failure, as
                       in fallback_on_failure (DECISIONS 2026-11-26, arbiter with a second try)
+  seq_fallback        arbiter_fallback with the order picked by a second-try-aware arbiter
+                      (arbiter_seq.pkl: predicted success of each order, skill then learned
+                      or learned then skill; DECISIONS 2026-11-26)
   learned_retry       the learned policy, and again after a failure (control: a second try
                       without switching executor)
   oracle              best executor per node in hindsight (upper bound; tries the skill,
@@ -34,7 +37,7 @@ from gap.skills import registry
 
 POLICIES = ("always_skill", "always_learned", "validity_only",
             "fallback_on_failure", "learned_arbiter", "oracle", "arbiter_fallback",
-            "learned_retry")
+            "learned_retry", "seq_fallback")
 WIDTH_BAND = (0.02, 0.055)   # verify_grasp band covering the 3-5 cm variants
 
 
@@ -81,7 +84,7 @@ def make_policy(name: str, graph: Graph, arbiter=None, margin: float = 0.0, seed
             return "fallback"
         if name == "learned_arbiter":
             return arbiter.choose(observe(cell, rng, obs_mode), margin)
-        if name == "arbiter_fallback":
+        if name in ("arbiter_fallback", "seq_fallback"):
             first = arbiter.choose(observe(cell, rng, obs_mode), margin)
             return "fallback" if first == "skill" else "fallback_learned"
         return "oracle"
@@ -110,5 +113,7 @@ def executors(name: str, models_dir: str, graph: Graph, seed: int):
     name may carry a margin, "learned_arbiter@0.1" (DECISIONS 2026-11-26, time-aware)."""
     bc, arb = load_models(models_dir)
     name, _, margin = name.partition("@")
+    if name == "seq_fallback":
+        arb = pickle.loads((Path(models_dir) / "arbiter_seq.pkl").read_bytes())
     return (make_policy(name, graph, arb, float(margin or 0), seed=seed, obs_mode=mode_of(bc)),
             make_learned_runner(bc, seed))

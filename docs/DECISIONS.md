@@ -415,3 +415,24 @@ splits) before making it. Format: date, decision, why, what it affects.
   3. graph_retry+arbiter_fallback beats arbiter_fallback (the two budgets add).
   4. graph_retry+learned_arbiter beats graph_retry+always_learned on invert and unstack and
      ties on the table tasks, as without the edges.
+
+## 2026-11-26: An arbiter trained for the second try (seq_fallback)
+- Why: arbiter_fallback picks the first executor with an arbiter trained on single-attempt
+  outcomes, but its success is that of an order (first executor, then the other after a
+  failure, from the failure state). The order that maximizes one attempt need not maximize
+  two: on unstack arbiter_fallback only ties fallback_on_failure.
+- Data: the paired probe also runs the other executor after a failed post-check without
+  restoring (ok_skill_then, ok_learned_then: did the order succeed). Second attempts draw
+  from their own random stream, so the single-attempt labels and later observations are
+  those of the run they replace. Same setup as runs/20261126-020348_train_arbiter
+  (wrist grasp from runs/20261126-002148_train_arbiter, place, stack, invert, 200 instances
+  each, rehearsal seeds).
+- `arbiter_seq.pkl`: the same Arbiter class (one logistic regression per order) on those
+  labels; `seq_fallback` runs the order with the higher predicted success. arbiter.pkl is
+  refit on the new run too and should match the earlier one exactly.
+- Evaluation: seq_fallback on the cells arbiter_fallback ran (place, stack, invert,
+  unstack on nominal, pose, object; sort heldout_task), eval seeds.
+- Expected, written before collecting the data: seq_fallback at least ties
+  arbiter_fallback on every task (episode-matched); on unstack it beats fallback_on_failure,
+  which arbiter_fallback did not; on the table tasks it ties arbiter_fallback because both
+  start with the learned grasp nearly always.

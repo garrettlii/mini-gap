@@ -316,3 +316,20 @@ def test_retry_graph_adds_a_fail_edge_from_every_grasp_node():
         assert sorted(e.src for e in new) == sorted(closes)
         assert all(e.on == "fail" and e.to.startswith("find") for e in new)
         assert not validate(g)
+
+
+def test_seq_fallback_runs_first_the_order_the_arbiter_picks(cell):
+    from gap.arbiter.policies import arbiter_graph, make_policy
+    from gap.sim.task_sampler import sample
+
+    class Pick:
+        def __init__(self, first):
+            self.first = first
+
+        def choose(self, x, margin=0.0):
+            return self.first
+    g = arbiter_graph("place")
+    cell.reset(sample("place", 50_000))
+    close = next(n.id for n in g.nodes if n.skill == "close_gripper")
+    for first, executor in (("skill", "fallback"), ("learned", "fallback_learned")):
+        assert make_policy("seq_fallback", g, Pick(first))(close, cell, None) == executor

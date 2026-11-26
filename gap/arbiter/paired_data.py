@@ -5,6 +5,8 @@ For each rehearsal instance and each arbitrated node:
   run the scripted skill  -> post_ok_skill;   cell.restore(snap)
   run the learned policy  -> post_ok_learned; cell.restore(snap)
   record features at snap + both labels
+  and after a failed post-check, the other executor from the state the failure left
+  (ok_<first>_then; a second-try-aware arbiter learns from these, DECISIONS 2026-11-26)
 Pairs from the same state remove most confounding between "which executor" and
 "which situation", which is what makes the arbiter result credible.
 
@@ -49,6 +51,7 @@ def _job(job) -> list[dict]:
     task, seed, split, models_dir = job
     graph, (bc, _) = arbiter_graph(task), load_models(models_dir)
     rng = np.random.default_rng([seed, 31])
+    rng2 = np.random.default_rng([seed, 37])   # second tries draw here: rng stays as before
     rows: list[dict] = []
 
     def probe(node_id, cell, instance) -> str:
@@ -59,12 +62,14 @@ def _job(job) -> list[dict]:
         snap, obs = cell.snapshot(), observe(cell, rng, mode_of(bc))
         row = {"task": task, "seed": seed, "split": split, "node": node_id, "obs": obs.tolist(),
                "valid": skill.pre(cell, {}, skill.resolve_params(node.params))[0]}
-        for kind in ("skill", "learned"):
+        def attempt(kind, r):
+            return run_skill(node.id, node.skill, cell, {}, node.params, executor=kind,
+                             learned=(lambda c, i, p: bc.run(c, p, r)) if kind == "learned"
+                             else None).post_ok
+        for kind, other in (("skill", "learned"), ("learned", "skill")):
             t0 = cell.data.time
-            entry = run_skill(node.id, node.skill, cell, {}, node.params, executor=kind,
-                              learned=(lambda c, i, p: bc.run(c, p, rng)) if kind == "learned"
-                              else None)
-            row[f"ok_{kind}"], row[f"t_{kind}"] = entry.post_ok, cell.data.time - t0
+            row[f"ok_{kind}"], row[f"t_{kind}"] = attempt(kind, rng), cell.data.time - t0
+            row[f"ok_{kind}_then"] = row[f"ok_{kind}"] or attempt(other, rng2)
             cell.restore(snap)
         rows.append(row)
         return "skill"

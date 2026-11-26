@@ -60,8 +60,13 @@ def main() -> None:
     y_l = np.array([r["ok_learned"] for r in rows])
     arb = Arbiter().fit(obs, y_s, y_l)
     run.file("arbiter.pkl").write_bytes(pickle.dumps(arb))
+    # second-try-aware arbiter: success of "skill, then learned" vs "learned, then skill"
+    y_ss = np.array([r["ok_skill_then"] for r in rows])
+    y_ls = np.array([r["ok_learned_then"] for r in rows])
+    run.file("arbiter_seq.pkl").write_bytes(pickle.dumps(Arbiter().fit(obs, y_ss, y_ls)))
     run.metrics(**demo_info, paired_rows=len(rows),
                 skill_success=float(y_s.mean()), learned_success=float(y_l.mean()),
+                skill_then_learned=float(y_ss.mean()), learned_then_skill=float(y_ls.mean()),
                 valid_rate=float(np.mean([r["valid"] for r in rows])),
                 coefficients=_coefficients(arb))
     print(json.dumps({"skill": y_s.mean(), "learned": y_l.mean(), "rows": len(rows)}))
