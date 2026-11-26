@@ -56,8 +56,10 @@ Contributions:
 
 **Workcell.** MuJoCo with the Menagerie Franka Panda, a table with colored cubes and two
 goal zones, and three cameras. Tasks: place (cube into a zone), stack (green on red), and
-sort (three cubes into two zones by color). Each task instance is fully determined by
-(task, split, seed).
+sort (three cubes into two zones by color). Two later tasks start from a stack, so a grasp
+must take a cube off another cube: invert (green starts on red; red must end on green) and
+unstack (a blue-green-red tower, sorted into the zones). Each task instance is fully
+determined by (task, split, seed).
 
 **Skills.** Ten typed skills with declared inputs, outputs, tunable parameters with ranges,
 and pre/post checks: grasp planning, close/open gripper, grasp verification, three motion
@@ -294,6 +296,54 @@ because the handed-over grasps are a minority and each saves only the gap betwee
 grasp times in the table. Larger margins buy more time at a steady cost in success. No margin
 beats always_learned on success, as expected when the skill alone almost never wins: on these
 tasks the margin is a speed dial, not a way to raise success.
+
+**Grasping off a stack.** Place, stack and sort start with every cube on the table, the
+states the learned grasp was trained on. Invert starts with green on red, so its first grasp
+takes green off red: no demonstration starts there, and the wrist estimate of the object's
+half height (top height over two, which assumes the object rests on the table) is off by a
+whole cube. We refit the arbiter on paired states from place, stack and invert (rehearsal
+seeds, the same wrist-camera learned grasp). Invert is the first task with more than a
+handful of states only the scripted close wins (share of paired states per task):
+
+<!-- table: paired_outcomes_refit by=task -->
+| method | place | stack | invert |
+|---|---|---|---|
+| skill_only | 0.01 [0.00, 0.04] (2/195) | 0.01 [0.00, 0.03] (1/197) | 0.05 [0.03, 0.08] (18/339) |
+| learned_only | 0.31 [0.25, 0.38] (61/195) | 0.36 [0.29, 0.42] (70/197) | 0.17 [0.13, 0.21] (57/339) |
+| both | 0.53 [0.46, 0.60] (103/195) | 0.49 [0.42, 0.56] (97/197) | 0.65 [0.60, 0.70] (222/339) |
+| neither | 0.15 [0.11, 0.21] (29/195) | 0.15 [0.10, 0.20] (29/197) | 0.12 [0.09, 0.16] (42/339) |
+<!-- /table -->
+
+Invert, evaluation seeds, camera noise on, the refit arbiter:
+
+<!-- table: eval_arbiter_invert -->
+| method | nominal | pose | object | distractors |
+|---|---|---|---|---|
+| always_skill | 0.35 [0.26, 0.45] (35/100) | 0.46 [0.37, 0.56] (46/100) | 0.40 [0.31, 0.50] (40/100) | 0.41 [0.32, 0.51] (41/100) |
+| always_learned | 0.43 [0.34, 0.53] (43/100) | 0.56 [0.46, 0.65] (56/100) | 0.61 [0.51, 0.70] (61/100) | 0.53 [0.43, 0.62] (53/100) |
+| validity_only | 0.41 [0.32, 0.51] (41/100) | 0.52 [0.42, 0.62] (52/100) | 0.44 [0.35, 0.54] (44/100) | 0.48 [0.38, 0.58] (48/100) |
+| fallback_on_failure | 0.56 [0.46, 0.65] (56/100) | 0.65 [0.55, 0.74] (65/100) | 0.50 [0.40, 0.60] (50/100) | 0.57 [0.47, 0.66] (57/100) |
+| learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
+| oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
+<!-- /table -->
+
+Matched episode by episode (same split and seed; the sign test counts the episodes only one
+of the two policies solved):
+
+<!-- paired: paired_invert -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_arbiter vs always_learned | 400 | 22 | 5 | 0.0015 |
+| learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
+| learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
+<!-- /paired -->
+
+Here the arbiter beats both single executors. In a dev-seed check, the grasps it gives the
+scripted close are almost all the stacked one, and in the evaluation episodes it has fewer
+failures at the stacked grasp than always_learned. It
+does not beat fallback_on_failure, which runs the skill and, after a failed grasp, the
+learned one within the same node visit: the two solve different episodes, and the counts
+are close to even.
 
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 

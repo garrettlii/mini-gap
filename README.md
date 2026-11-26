@@ -90,6 +90,29 @@ grasp only if its predicted success beats the skill's by more than m; all splits
 | learned_arbiter@0.5 | 0.61 [0.58, 0.64] (550/900) | 0.70 [0.68, 0.73] (696/988) | 0.44 |
 <!-- /sweep -->
 
+**Grasping off a stack** (invert: green starts on red, red must end on green; the first
+grasp takes a cube off a cube, outside the learned grasp's demonstrations; arbiter refit on
+place, stack and invert paired states; episode-matched sign tests below the table):
+
+<!-- table: eval_arbiter_invert -->
+| method | nominal | pose | object | distractors |
+|---|---|---|---|---|
+| always_skill | 0.35 [0.26, 0.45] (35/100) | 0.46 [0.37, 0.56] (46/100) | 0.40 [0.31, 0.50] (40/100) | 0.41 [0.32, 0.51] (41/100) |
+| always_learned | 0.43 [0.34, 0.53] (43/100) | 0.56 [0.46, 0.65] (56/100) | 0.61 [0.51, 0.70] (61/100) | 0.53 [0.43, 0.62] (53/100) |
+| validity_only | 0.41 [0.32, 0.51] (41/100) | 0.52 [0.42, 0.62] (52/100) | 0.44 [0.35, 0.54] (44/100) | 0.48 [0.38, 0.58] (48/100) |
+| fallback_on_failure | 0.56 [0.46, 0.65] (56/100) | 0.65 [0.55, 0.74] (65/100) | 0.50 [0.40, 0.60] (50/100) | 0.57 [0.47, 0.66] (57/100) |
+| learned_arbiter | 0.49 [0.39, 0.59] (49/100) | 0.61 [0.51, 0.70] (61/100) | 0.63 [0.53, 0.72] (63/100) | 0.57 [0.47, 0.66] (57/100) |
+| oracle | 0.48 [0.38, 0.58] (48/100) | 0.65 [0.55, 0.74] (65/100) | 0.59 [0.49, 0.68] (59/100) | 0.57 [0.47, 0.66] (57/100) |
+<!-- /table -->
+
+<!-- paired: paired_invert -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| learned_arbiter vs always_learned | 400 | 22 | 5 | 0.0015 |
+| learned_arbiter vs always_skill | 400 | 89 | 21 | 3.8e-11 |
+| learned_arbiter vs fallback_on_failure | 400 | 53 | 51 | 0.92 |
+<!-- /paired -->
+
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
 instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
 grasp executor):

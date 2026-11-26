@@ -1,0 +1,91 @@
+{
+ "cells": [
+  {
+   "method": "skill_only",
+   "split": "wrist/600",
+   "task": "place",
+   "n": 195,
+   "successes": 2
+  },
+  {
+   "method": "learned_only",
+   "split": "wrist/600",
+   "task": "place",
+   "n": 195,
+   "successes": 61
+  },
+  {
+   "method": "both",
+   "split": "wrist/600",
+   "task": "place",
+   "n": 195,
+   "successes": 103
+  },
+  {
+   "method": "neither",
+   "split": "wrist/600",
+   "task": "place",
+   "n": 195,
+   "successes": 29
+  },
+  {
+   "method": "skill_only",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 1
+  },
+  {
+   "method": "learned_only",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 70
+  },
+  {
+   "method": "both",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 97
+  },
+  {
+   "method": "neither",
+   "split": "wrist/600",
+   "task": "stack",
+   "n": 197,
+   "successes": 29
+  },
+  {
+   "method": "skill_only",
+   "split": "wrist/600",
+   "task": "invert",
+   "n": 339,
+   "successes": 18
+  },
+  {
+   "method": "learned_only",
+   "split": "wrist/600",
+   "task": "invert",
+   "n": 339,
+   "successes": 57
+  },
+  {
+   "method": "both",
+   "split": "wrist/600",
+   "task": "invert",
+   "n": 339,
+   "successes": 222
+  },
+  {
+   "method": "neither",
+   "split": "wrist/600",
+   "task": "invert",
+   "n": 339,
+   "successes": 42
+  }
+ ],
+ "sources": [
+  "20261126-020348_train_arbiter"
+ ]
+}

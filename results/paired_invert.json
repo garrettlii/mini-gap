@@ -1,0 +1,37 @@
+{
+ "comparisons": [
+  {
+   "a": "learned_arbiter",
+   "b": "always_learned",
+   "episodes": 400,
+   "a_only": 22,
+   "b_only": 5,
+   "p": 0.0015137195587158203,
+   "sources": [
+    "20261126-020858_eval"
+   ]
+  },
+  {
+   "a": "learned_arbiter",
+   "b": "always_skill",
+   "episodes": 400,
+   "a_only": 89,
+   "b_only": 21,
+   "p": 3.7651773363237467e-11,
+   "sources": [
+    "20261126-020858_eval"
+   ]
+  },
+  {
+   "a": "learned_arbiter",
+   "b": "fallback_on_failure",
+   "episodes": 400,
+   "a_only": 53,
+   "b_only": 51,
+   "p": 0.921948827626431,
+   "sources": [
+    "20261126-020858_eval"
+   ]
+  }
+ ]
+}
