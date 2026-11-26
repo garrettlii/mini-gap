@@ -189,3 +189,24 @@ def test_paired_outcomes_become_cells(tmp_path):
     (tmp_path / "paired.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
     cells = {c["method"]: c["successes"] for c in load_cells([str(tmp_path / "metrics.json")])}
     assert cells == {"skill_only": 1, "learned_only": 1, "both": 1, "neither": 0}
+
+
+def test_sweep_block_pools_success_and_grasp_time(tmp_path):
+    import json
+
+    from gap.eval.report import render
+    cells = [{"method": "a@0.1", "split": s, "task": "place", "successes": 5, "n": 10,
+              "grasp_s": 3.0, "grasps": 10, "skill_grasps": 4} for s in ("nominal", "pose")]
+    (tmp_path / "w.json").write_text(json.dumps({"cells": cells}))
+    out = render("<!-- sweep: w -->\n<!-- /sweep -->", tmp_path)
+    assert "| a@0.1 | 0.50" in out and "(8/20) | 0.30 |" in out and render(out, tmp_path) == out
+
+
+def test_executors_read_a_margin_from_the_name(monkeypatch):
+    from gap.arbiter import policies
+    seen = {}
+    monkeypatch.setattr(policies, "load_models", lambda d: (object(), None))
+    monkeypatch.setattr(policies, "make_policy",
+                        lambda name, g, arb, margin=0.0, **kw: seen.update(name=name, m=margin))
+    policies.executors("learned_arbiter@0.2", "x", None, 0)
+    assert seen == {"name": "learned_arbiter", "m": 0.2}

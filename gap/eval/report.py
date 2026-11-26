@@ -11,6 +11,7 @@ Never hand-edit numbers into README or the write-up: regenerate them from here.
 --render refills marked blocks in place from results/<label>.json (tracked in git):
   <!-- table: <label> [by=task] [methods=a,b] --> ... <!-- /table -->
   <!-- rate: <label> <method> <split> [task] --> ... <!-- /rate -->
+  <!-- sweep: <label> [methods=a,b] --> ... <!-- /sweep -->   (success, skill share, grasp time)
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from gap.utils.runs import read_jsonl
 from gap.utils.stats import fmt_rate
 
 RESULTS = Path(__file__).resolve().parents[2] / "results"
-BLOCK = re.compile(r"<!-- (table|rate): ([^>]*?) -->.*?<!-- /\1 -->", re.DOTALL)
+BLOCK = re.compile(r"<!-- (table|rate|sweep): ([^>]*?) -->.*?<!-- /\1 -->", re.DOTALL)
 
 
 def load_cells(metrics_paths: list[str]) -> list[dict]:
@@ -82,6 +83,20 @@ def _table(cells: list[dict], by: str = "split", methods: list[str] | None = Non
     return "\n".join(lines)
 
 
+def _sweep(cells: list[dict], methods: list[str] | None = None) -> str:
+    """Rows = methods, pooled over every split and task: success, share of grasp-node visits
+    the scripted skill ran, mean simulated seconds per grasp-node visit."""
+    methods = methods or list(dict.fromkeys(c["method"] for c in cells))
+    lines = ["| method | success | grasps by skill | s per grasp |", "|---|---|---|---|"]
+    for m in methods:
+        cs = [c for c in cells if c["method"] == m]
+        tot = {k: sum(c[k] for c in cs) for k in ("successes", "n", "grasps", "skill_grasps")}
+        secs = sum(c["grasp_s"] for c in cs) / max(tot["grasps"], 1)
+        lines.append(f"| {m} | {fmt_rate(tot['successes'], tot['n'])} | "
+                     f"{fmt_rate(tot['skill_grasps'], tot['grasps'])} | {secs:.2f} |")
+    return "\n".join(lines)
+
+
 def _rate(cells: list[dict], method: str, split: str, task: str | None = None) -> str:
     hits = [c for c in cells if c["method"] == method and c["split"] == split
             and task in (None, c["task"])]
@@ -100,9 +115,10 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
         if kind == "rate":
             return f"<!-- rate: {m.group(2)} -->{_rate(cells, *spec[1:])}<!-- /rate -->"
         opts = dict(o.split("=", 1) for o in spec[1:])
-        body = _table(cells, opts.get("by", "split"),
-                      opts["methods"].split(",") if "methods" in opts else None)
-        return f"<!-- table: {m.group(2)} -->\n{body}\n<!-- /table -->"
+        methods = opts["methods"].split(",") if "methods" in opts else None
+        body = _sweep(cells, methods) if kind == "sweep" else \
+            _table(cells, opts.get("by", "split"), methods)
+        return f"<!-- {kind}: {m.group(2)} -->\n{body}\n<!-- /{kind} -->"
     return BLOCK.sub(fill, text)
 
 

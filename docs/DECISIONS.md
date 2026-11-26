@@ -263,3 +263,16 @@ splits) before making it. Format: date, decision, why, what it affects.
   results/paired_outcomes.json, which report.py builds from each train_arbiter run's
   paired.jsonl (share of paired states where only the skill, only the learned grasp, both,
   or neither passed), so the dominance claim is a generated number like the rest.
+
+## 2026-11-26: Time-aware arbitration (margin sweep)
+- Where both grasps succeed the scripted close is faster, so the arbiter gets a margin: it
+  picks the learned grasp only if its predicted success beats the skill's by more than the
+  margin (Arbiter.choose already takes one). Method name `learned_arbiter@<margin>`.
+- Grid fixed in advance from the spread of predicted gaps on the arbiter's own paired
+  training states: 0, 0.05, 0.1, 0.2, 0.3, 0.5, plus always_skill and always_learned as the
+  two ends. Wrist-camera executor (runs/20261126-002148_train_arbiter), eval seeds, all five
+  splits. Every margin is reported; none is picked on eval seeds.
+- Time measure: simulated seconds inside grasp nodes per grasp-node visit (sim_steps x dt
+  from the trace), so failed episodes that end early do not look fast. Also the share of
+  grasp visits run by the scripted skill. run_eval writes both into each cell (grasp_s,
+  grasps, skill_grasps); report.py renders them with a `sweep` block.

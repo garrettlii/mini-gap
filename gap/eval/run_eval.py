@@ -14,6 +14,8 @@ Methods:
                                     (--models <train_arbiter run>)
   <graph method>+<policy>           a graph method run under an arbitration policy, e.g.
                                     graph_loop+learned_arbiter
+  learned_arbiter@<margin>          the arbiter picks the learned grasp only if its predicted
+                                    success beats the skill's by more than the margin
 The camera noise model is on for every method unless --clean-camera. Every policy runs with
 the RGB-D locator: the ground-truth locator (privileged) is swapped out at evaluation.
 --dev swaps in dev seeds (a block of 1000 per split) for tuning before the real eval.
@@ -28,6 +30,7 @@ from pathlib import Path
 
 import numpy as np
 
+from gap.arbiter.fallback import SKILL_TYPE
 from gap.arbiter.policies import POLICIES, arbiter_graph
 from gap.eval.splits import SPLITS
 from gap.graph.schema import Graph
@@ -38,6 +41,7 @@ from gap.utils.runs import RunDir
 from gap.utils.seeds import eval_seeds, seed_range
 
 LLM_METHODS = ("code", "graph_single", "graph_multi")
+SIM_DT = 0.002                       # workcell.xml timestep, seconds
 TRAINED_TASKS = ("place", "stack")
 
 
@@ -64,7 +68,8 @@ def main(argv: list[str] | None = None) -> None:
                     run.append_jsonl("episodes.jsonl", _row(method, split, r))
                 cells.append({"method": method, "split": split, "task": task,
                               "successes": sum(r.success for r in results), "n": len(results),
-                              "mean_sim_s": float(np.mean([r.sim_time_s for r in results]))})
+                              "mean_sim_s": float(np.mean([r.sim_time_s for r in results])),
+                              **_grasp_totals(results)})
                 print(f"{split:12s} {task:6s} {method:20s} {cells[-1]['successes']}/{len(results)}",
                       flush=True)
                 run.metrics(cells=cells, camera_noise=noise)
@@ -80,9 +85,10 @@ def _seeds(split: str, n: int, dev: bool) -> list[int]:
 def _run_method(method, task, insts, noise, args, run):
     """method is a name from the module docstring, optionally "<graph method>+<policy>"."""
     base, _, arb = method.partition("+")
-    if (base in POLICIES or arb) and not args.models:
+    is_policy = base.partition("@")[0] in POLICIES     # "learned_arbiter@0.1": with a margin
+    if (is_policy or arb) and not args.models:
         raise SystemExit("--models is required for the arbitration policies")
-    if base in POLICIES:
+    if is_policy:
         return _rehearse(arbiter_graph(task), insts, noise, (base, args.models))
     policy = (arb, args.models) if arb else None
     if base == "graph_loop":
@@ -158,6 +164,13 @@ def _code_job(job):
         return EpisodeResult(inst, False, [], 0.0, "exception")
     res.trace = []
     return res
+
+
+def _grasp_totals(results) -> dict:
+    """Simulated seconds in grasp nodes, grasp-node visits, and visits the skill ran."""
+    visits = [t for r in results for t in r.trace if t.skill in SKILL_TYPE]
+    return {"grasp_s": sum(t.sim_steps for t in visits) * SIM_DT, "grasps": len(visits),
+            "skill_grasps": sum(t.executor == "skill" for t in visits)}
 
 
 def _row(method: str, split: str, r) -> dict:

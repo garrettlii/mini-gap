@@ -85,7 +85,9 @@ def load_models(models_dir: str) -> tuple:
 
 
 def executors(name: str, models_dir: str, graph: Graph, seed: int):
-    """(executor_policy, learned_runner) for run_graph, models loaded once per process."""
+    """(executor_policy, learned_runner) for run_graph, models loaded once per process.
+    name may carry a margin, "learned_arbiter@0.1" (DECISIONS 2026-11-26, time-aware)."""
     bc, arb = load_models(models_dir)
-    return (make_policy(name, graph, arb, seed=seed, obs_mode=mode_of(bc)),
+    name, _, margin = name.partition("@")
+    return (make_policy(name, graph, arb, float(margin or 0), seed=seed, obs_mode=mode_of(bc)),
             make_learned_runner(bc, seed))
