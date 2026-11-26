@@ -2,6 +2,16 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 8: reset tolerance for towers
+- Works: reset allows 1 mm of settling per contact beneath an object (table objects keep
+  1 mm), so leaning unstack towers no longer raise. Evidence: scripts/settle_probe.py in
+  runs/20261126-063938_settle_probe; unstack object split re-run for the eight policies
+  (runs/20261126-063114_eval) with every earlier episode replayed exactly; tables and
+  paired tests republished (results/eval_arbiter_unstack, paired_unstack, retry_unstack).
+  `uv run pytest --phase 7` 92 passed; `ruff check .` clean.
+- Finding: no unstack comparison changed direction or significance.
+- Next: unchanged from Session 7 minus the tolerance item.
+
 ## Session 7: stacked tasks and a second try inside the grasp node
 - Works: tasks invert and unstack (`start_stacked` takes a list of pairs; unstack's reference
   graph succeeded on 24/24 dev seeds per split probed, nominal and pose, ground-truth

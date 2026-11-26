@@ -322,6 +322,7 @@ splits) before making it. Format: date, decision, why, what it affects.
   run rather than loosening the check after seeing results: it lowers every policy's
   object-split rate equally and drops out of the episode-matched comparisons. A fix (a
   settle tolerance that grows with stack height) belongs before any new tower task.
+  Fixed and the object split re-run: entry "Reset settle tolerance" below.
 
 ## 2026-11-26: Arbiter with a second try (arbiter_fallback)
 - Why: on invert nominal and pose, fallback_on_failure leads every other policy, the arbiter
@@ -383,3 +384,12 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Expected, written before the rerun: the 90 object-split episodes per policy that ran
   before reproduce exactly; each policy's object-split rate rises by at most 10 points; no
   paired comparison on unstack changes direction.
+- Evidence: the probe is scripts/settle_probe.py, recorded in
+  runs/20261126-063938_settle_probe (largest displacement and tilt per level; same dev
+  seeds). The sink-per-level and which-variant-leans readings above came from an earlier
+  untracked version that also printed variants; the test pins one leaning tower (dev seed
+  50010).
+- Result (runs/20261126-063114_eval): every object-split episode that ran before replayed
+  exactly, no reset raised, every rate rose within the expected bound, and no unstack
+  comparison changed direction or crossed p = 0.05 (results/eval_arbiter_unstack,
+  paired_unstack, retry_unstack).
