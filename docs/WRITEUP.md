@@ -521,6 +521,62 @@ choice pays where the two executors fail in different states, and a cheap retry 
 node captures most of the rest. Over all five tasks, the arbiter's choice with a switch on
 failure is the best policy tested or tied with it.
 
+**Retrying from the graph, and an arbiter trained for the second try.** Two follow-ups,
+both logged with predictions before their runs (DECISIONS 2026-11-26). First, graph_retry
+adds a fail edge from each grasp node back to the node that locates the object, so a failed
+grasp re-locates, re-plans and re-approaches (the same retry budget as the grasp check's
+edge). Second, seq_fallback is arbiter_fallback with the order chosen by an arbiter trained
+on what each order achieves: the paired probe also runs the other executor after a failed
+attempt, from the failure state.
+
+<!-- table: eval_second_try methods=always_learned,learned_retry,arbiter_fallback,seq_fallback,graph_retry+always_learned,graph_retry+learned_arbiter,graph_retry+arbiter_fallback by=task splits=nominal,pose,object,heldout_task -->
+| method | place | stack | sort | invert | unstack |
+|---|---|---|---|---|---|
+| always_learned | 0.85 [0.80, 0.88] (254/300) | 0.73 [0.68, 0.78] (220/300) | 0.72 [0.63, 0.80] (72/100) | 0.53 [0.48, 0.59] (160/300) | 0.46 [0.41, 0.52] (139/300) |
+| learned_retry | 0.90 [0.86, 0.93] (270/300) | 0.81 [0.76, 0.85] (243/300) | 0.80 [0.71, 0.87] (80/100) | 0.67 [0.61, 0.72] (201/300) | 0.54 [0.48, 0.60] (162/300) |
+| arbiter_fallback | 0.89 [0.85, 0.92] (268/300) | 0.81 [0.77, 0.85] (244/300) | 0.80 [0.71, 0.87] (80/100) | 0.70 [0.65, 0.75] (211/300) | 0.62 [0.57, 0.68] (187/300) |
+| seq_fallback | 0.89 [0.85, 0.92] (268/300) | 0.82 [0.77, 0.86] (245/300) | 0.80 [0.71, 0.87] (80/100) | 0.71 [0.65, 0.76] (212/300) | 0.62 [0.56, 0.67] (186/300) |
+| graph_retry+always_learned | 0.85 [0.80, 0.88] (254/300) | 0.74 [0.68, 0.78] (221/300) | 0.72 [0.63, 0.80] (72/100) | 0.55 [0.49, 0.60] (164/300) | 0.48 [0.42, 0.53] (143/300) |
+| graph_retry+learned_arbiter | 0.84 [0.80, 0.88] (253/300) | 0.74 [0.69, 0.79] (222/300) | 0.71 [0.61, 0.79] (71/100) | 0.59 [0.54, 0.65] (178/300) | 0.55 [0.49, 0.61] (165/300) |
+| graph_retry+arbiter_fallback | 0.90 [0.86, 0.93] (270/300) | 0.81 [0.77, 0.85] (244/300) | 0.80 [0.71, 0.87] (80/100) | 0.71 [0.66, 0.76] (214/300) | 0.64 [0.59, 0.70] (193/300) |
+<!-- /table -->
+
+<!-- paired: graph_retry -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| graph_retry+always_learned vs always_learned | 1300 | 9 | 0 | 0.0039 |
+| graph_retry+always_learned vs learned_retry | 1300 | 6 | 108 | 2.7e-25 |
+| graph_retry+arbiter_fallback vs arbiter_fallback | 1300 | 11 | 0 | 0.00098 |
+| graph_retry+learned_arbiter vs graph_retry+always_learned | 1300 | 57 | 22 | 0.0001 |
+<!-- /paired -->
+
+<!-- paired: seq_fallback -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| seq_fallback vs arbiter_fallback | 1300 | 7 | 6 | 1 |
+| seq_fallback vs fallback_on_failure | 1300 | 227 | 52 | 3.1e-27 |
+<!-- /paired -->
+
+Retrying from the graph recovers only a handful of episodes (significant, but small): the
+edge is taken, but the new attempt
+mostly fails the same way, off center with one finger on the cube, and the retry inside the
+node beats it on every task. Our reading, not separately measured: the overhead camera's
+calibration error is fixed within an episode, so locating the object again yields the same
+biased estimate and the same approach, while the retry inside the node starts from wherever
+the hand ended up, next to the object, and the learned grasp's wrist view corrects from
+there. Stacking the graph retry on arbiter_fallback adds a few episodes and never loses one.
+With the edges in place, the arbiter still beats always-learned on invert and unstack and
+ties on the table tasks, as without them.
+
+The second-try arbiter changes almost nothing: seq_fallback and arbiter_fallback differ on
+a handful of episodes, and on unstack seq_fallback ties fallback_on_failure, against our
+prediction. The paired training data show why: even choosing the better order per state
+in hindsight would add little over always starting with the learned grasp, and both
+arbiters already start with it nearly everywhere outside stacked grasps. Collecting the
+second-try labels also showed that a snapshot restore after the extra attempt is not
+perfectly clean: a few training states differ from the earlier collection, so the two
+arbiter files are not identical.
+
 ### 5.2 Policy authoring methods (evaluation seeds, camera noise on)
 
 Free-form code over the same skills, a single planner call, and planner plus structure

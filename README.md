@@ -173,6 +173,19 @@ does; paired tests in the write-up):
 | learned_retry | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.82 [0.77, 0.87] (165/200) | 0.92 [0.87, 0.95] (183/200) | 0.80 [0.71, 0.87] (80/100) |
 <!-- /table -->
 
+**Retry edges from grasp nodes, and a second-try-aware arbiter** (graph_retry: a failed
+grasp re-locates and re-approaches; seq_fallback: arbiter_fallback with the order picked by
+an arbiter trained on two-attempt outcomes; neither adds much, see the write-up):
+
+<!-- paired: graph_retry -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| graph_retry+always_learned vs always_learned | 1300 | 9 | 0 | 0.0039 |
+| graph_retry+always_learned vs learned_retry | 1300 | 6 | 108 | 2.7e-25 |
+| graph_retry+arbiter_fallback vs arbiter_fallback | 1300 | 11 | 0 | 0.00098 |
+| graph_retry+learned_arbiter vs graph_retry+always_learned | 1300 | 57 | 22 | 0.0001 |
+<!-- /paired -->
+
 **Policy authoring** (graphs and code written by the local 4B model, one per task and
 instruction; the last row runs the graph_multi graphs with the learned arbiter picking each
 grasp executor):

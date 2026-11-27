@@ -1,0 +1,64 @@
+{
+ "comparisons": [
+  {
+   "a": "graph_retry+always_learned",
+   "b": "always_learned",
+   "episodes": 1300,
+   "a_only": 9,
+   "b_only": 0,
+   "p": 0.00390625,
+   "sources": [
+    "20261126-003116_eval",
+    "20261126-020858_eval",
+    "20261126-024558_eval",
+    "20261126-063114_eval",
+    "20261126-173434_eval",
+    "20261126-182528_eval"
+   ]
+  },
+  {
+   "a": "graph_retry+always_learned",
+   "b": "learned_retry",
+   "episodes": 1300,
+   "a_only": 6,
+   "b_only": 108,
+   "p": 2.7161864516312895e-25,
+   "sources": [
+    "20261126-032726_eval",
+    "20261126-031503_eval",
+    "20261126-032155_eval",
+    "20261126-063114_eval",
+    "20261126-173434_eval",
+    "20261126-182528_eval"
+   ]
+  },
+  {
+   "a": "graph_retry+arbiter_fallback",
+   "b": "arbiter_fallback",
+   "episodes": 1300,
+   "a_only": 11,
+   "b_only": 0,
+   "p": 0.0009765625,
+   "sources": [
+    "20261126-030905_eval",
+    "20261126-030409_eval",
+    "20261126-024558_eval",
+    "20261126-063114_eval",
+    "20261126-173434_eval",
+    "20261126-182528_eval"
+   ]
+  },
+  {
+   "a": "graph_retry+learned_arbiter",
+   "b": "graph_retry+always_learned",
+   "episodes": 1300,
+   "a_only": 57,
+   "b_only": 22,
+   "p": 0.00010259635179423318,
+   "sources": [
+    "20261126-173434_eval",
+    "20261126-182528_eval"
+   ]
+  }
+ ]
+}

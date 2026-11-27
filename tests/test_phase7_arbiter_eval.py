@@ -1,5 +1,7 @@
 """Phase 6b/7 contracts: executor semantics, the arbiter, splits, and run_eval.  --phase 7"""
 
+import json
+
 import numpy as np
 import pytest
 
@@ -333,3 +335,12 @@ def test_seq_fallback_runs_first_the_order_the_arbiter_picks(cell):
     close = next(n.id for n in g.nodes if n.skill == "close_gripper")
     for first, executor in (("skill", "fallback"), ("learned", "fallback_learned")):
         assert make_policy("seq_fallback", g, Pick(first))(close, cell, None) == executor
+
+
+def test_render_table_keeps_only_the_named_splits(tmp_path):
+    from gap.eval.report import render
+    cells = [{"method": "m", "split": s, "task": "place", "successes": k, "n": 10}
+             for s, k in (("nominal", 5), ("distractors", 10))]
+    (tmp_path / "lab.json").write_text(json.dumps({"cells": cells}))
+    out = render("<!-- table: lab by=task splits=nominal --><!-- /table -->", tmp_path)
+    assert "(5/10)" in out and "15/20" not in out

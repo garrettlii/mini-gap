@@ -2,6 +2,17 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 9: grasp-node retry edges and a second-try-aware arbiter
+- Works: run_eval method graph_retry+<policy> (policies.retry_graph); paired probe records
+  second-try outcomes; policy seq_fallback (arbiter_seq.pkl); report table option splits=.
+  `uv run pytest --phase 7` 95 passed; `ruff check .` clean.
+- Findings (results/eval_second_try, graph_retry, seq_fallback): a fail edge from the grasp
+  node helps only slightly, far less than retrying inside the node; the second-try arbiter
+  ties arbiter_fallback because there is no headroom in which order goes first.
+- Next: test the calibration explanation (graph_retry with --clean-camera); find why
+  restore after an extra attempt is not exact.
+- Open: snapshot/restore exactness after a failed grasp attempt.
+
 ## Session 8: reset tolerance for towers
 - Works: reset allows 1 mm of settling per contact beneath an object (table objects keep
   1 mm), so leaning unstack towers no longer raise. Evidence: scripts/settle_probe.py in

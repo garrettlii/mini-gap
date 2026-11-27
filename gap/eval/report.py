@@ -9,7 +9,7 @@ Never hand-edit numbers into README or the write-up: regenerate them from here.
   uv run python -m gap.eval.report --render README.md docs/WRITEUP.md
 
 --render refills marked blocks in place from results/<label>.json (tracked in git):
-  <!-- table: <label> [by=task] [methods=a,b] --> ... <!-- /table -->
+  <!-- table: <label> [by=task] [methods=a,b] [splits=a,b] --> ... <!-- /table -->
   <!-- rate: <label> <method> <split> [task] --> ... <!-- /rate -->
   <!-- sweep: <label> [methods=a,b] --> ... <!-- /sweep -->   (success, skill share, grasp time)
   <!-- paired: <label> --> ... <!-- /paired -->   (episode-matched comparisons, sign test)
@@ -130,6 +130,8 @@ def render(text: str, results_dir: Path = RESULTS) -> str:
             return f"<!-- rate: {m.group(2)} -->{_rate(cells, *spec[1:])}<!-- /rate -->"
         opts = dict(o.split("=", 1) for o in spec[1:])
         methods = opts["methods"].split(",") if "methods" in opts else None
+        if "splits" in opts:   # same splits for every row, so pooled rates compare
+            cells = [c for c in cells if c["split"] in opts["splits"].split(",")]
         body = _sweep(cells, methods) if kind == "sweep" else \
             _table(cells, opts.get("by", "split"), methods)
         return f"<!-- {kind}: {m.group(2)} -->\n{body}\n<!-- /{kind} -->"

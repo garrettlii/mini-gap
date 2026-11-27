@@ -415,6 +415,12 @@ splits) before making it. Format: date, decision, why, what it affects.
   3. graph_retry+arbiter_fallback beats arbiter_fallback (the two budgets add).
   4. graph_retry+learned_arbiter beats graph_retry+always_learned on invert and unstack and
      ties on the table tasks, as without the edges.
+- Result (runs/20261126-173434_eval, 20261126-182528_eval; results/graph_retry,
+  eval_second_try): 1 holds but the lift is small; 2 holds, the in-node retry is far ahead
+  on every task; 3 holds, small; 4 holds. Failed episodes still end at the grasp, off
+  center: the retried approach repeats the first one's error (likely the per-episode
+  camera calibration error, not separately tested). The table rows use only the splits
+  every method ran (report.py table option splits=).
 
 ## 2026-11-26: An arbiter trained for the second try (seq_fallback)
 - Why: arbiter_fallback picks the first executor with an arbiter trained on single-attempt
@@ -436,3 +442,10 @@ splits) before making it. Format: date, decision, why, what it affects.
   arbiter_fallback on every task (episode-matched); on unstack it beats fallback_on_failure,
   which arbiter_fallback did not; on the table tasks it ties arbiter_fallback because both
   start with the learned grasp nearly always.
+- Result (runs/20261126-173603_train_arbiter, eval runs/20261126-174636_eval and
+  20261126-180546_eval; results/seq_fallback): seq_fallback ties arbiter_fallback on every
+  task; on unstack it ties fallback_on_failure, so that prediction fails. In the training
+  data the best order per state in hindsight adds little over always starting with the
+  learned grasp, and both arbiters start with it nearly everywhere: no headroom. Also
+  against the plan: the refit arbiter.pkl is not identical to the earlier run's; a few
+  states differ after the extra attempt and restore, so restore is not perfectly exact.
