@@ -15,7 +15,7 @@ Newest first. One entry per working session: what works (with evidence), what's 
   snapshot keeps the depth-noise generators and a full MjData copy; a new renderer discards
   its first depth frame. Paired labels now match across worker counts and probe versions.
   Two new tests; `uv run pytest --phase 7` 97 passed.
-- Next: unchanged from Session 7's remaining items.
+- Next: Session 7's items are all done; optional higher-temperature GRPO (Session 5).
 
 ## Session 8: reset tolerance for towers
 - Works: reset allows 1 mm of settling per contact beneath an object (table objects keep
