@@ -449,3 +449,10 @@ splits) before making it. Format: date, decision, why, what it affects.
   learned grasp, and both arbiters start with it nearly everywhere: no headroom. Also
   against the plan: the refit arbiter.pkl is not identical to the earlier run's; a few
   states differ after the extra attempt and restore, so restore is not perfectly exact.
+
+## 2026-11-26: Does camera calibration error explain why graph_retry repeats its failure?
+- Test: graph_retry+always_learned and always_learned with --clean-camera (no calibration
+  or depth noise), same tasks, splits, models and eval seeds as the graph_retry run.
+- Expected, written before the run: with a clean camera graph_retry+always_learned wins
+  clearly more episodes over always_learned than it does with noise on (more only-A wins,
+  episode-matched). If not, the explanation in the graph_retry result is wrong.
