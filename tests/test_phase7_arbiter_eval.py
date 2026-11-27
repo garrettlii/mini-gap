@@ -344,3 +344,23 @@ def test_render_table_keeps_only_the_named_splits(tmp_path):
     (tmp_path / "lab.json").write_text(json.dumps({"cells": cells}))
     out = render("<!-- table: lab by=task splits=nominal --><!-- /table -->", tmp_path)
     assert "(5/10)" in out and "15/20" not in out
+
+
+def test_restore_also_rewinds_camera_noise():
+    from gap.sim.task_sampler import sample
+    from gap.sim.workcell import Workcell
+    cell = Workcell(camera_noise=True)
+    cell.reset(sample("place", 50_003))
+    snap = cell.snapshot()
+    a = cell.render("wrist", depth=True)
+    cell.render("overhead", depth=True)
+    cell.restore(snap)
+    assert np.array_equal(a, cell.render("wrist", depth=True))
+
+
+def test_first_depth_frame_matches_later_ones():
+    from gap.sim.task_sampler import sample
+    from gap.sim.workcell import Workcell
+    cell = Workcell()
+    cell.reset(sample("place", 50_003))
+    assert np.array_equal(cell.render("front", depth=True), cell.render("front", depth=True))

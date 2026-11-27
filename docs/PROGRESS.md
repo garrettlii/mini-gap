@@ -11,8 +11,11 @@ Newest first. One entry per working session: what works (with evidence), what's 
   ties arbiter_fallback because there is no headroom in which order goes first.
 - Clean-camera check (results/graph_retry_clean) refuted the calibration explanation: a
   graph-level retry replays nearly the same attempt; the in-node retry differs by its start.
-- Next: find why restore after an extra attempt is not exact.
-- Open: snapshot/restore exactness after a failed grasp attempt.
+- Restore made exact (DECISIONS "snapshot() also saves the camera-noise random streams"):
+  snapshot keeps the depth-noise generators and a full MjData copy; a new renderer discards
+  its first depth frame. Paired labels now match across worker counts and probe versions.
+  Two new tests; `uv run pytest --phase 7` 97 passed.
+- Next: unchanged from Session 7's remaining items.
 
 ## Session 8: reset tolerance for towers
 - Works: reset allows 1 mm of settling per contact beneath an object (table objects keep

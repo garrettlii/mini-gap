@@ -218,21 +218,19 @@ class Workcell:
 
     # --------------------------------------------------------- snapshot/restore
     def snapshot(self) -> Any:
-        """Exact copy of the physics state (qpos, qvel, act, ctrl, time, warmstart).
-
-        Hint: mujoco.mj_stateSize / mujoco.mj_getState with
-        mujoco.mjtState.mjSTATE_INTEGRATION. Test: snapshot, step 200, restore, step 200
-        again; both rollouts must match bit for bit.
-        """
-        size = mujoco.mj_stateSize(self.model, mujoco.mjtState.mjSTATE_INTEGRATION)
-        snap = np.empty(size, dtype=np.float64)
-        mujoco.mj_getState(self.model, self.data, snap, mujoco.mjtState.mjSTATE_INTEGRATION)
-        return snap
+        """Exact copy of the workcell: all of MjData (state and the derived quantities that
+        rendering and contact checks read) and the camera-noise random streams
+        (DECISIONS 2026-11-26)."""
+        data = mujoco.MjData(self.model)
+        mujoco.mj_copyData(data, self.model, self.data)
+        return data, self._noise_rng.bit_generator.state, self._wrist_rng.bit_generator.state
 
     def restore(self, snap: Any) -> State:
-        """Inverse of snapshot(). Remember mj_forward after mj_setState."""
-        mujoco.mj_setState(self.model, self.data, snap, mujoco.mjtState.mjSTATE_INTEGRATION)
-        mujoco.mj_forward(self.model, self.data)
+        """Inverse of snapshot(). No mj_forward: after mj_step the derived quantities lag the
+        state by one step, and recomputing them would make a restored state render and check
+        differently from the stepped one."""
+        data, self._noise_rng.bit_generator.state, self._wrist_rng.bit_generator.state = snap
+        mujoco.mj_copyData(self.data, self.model, data)
         return self.get_state()
 
     # ---------------------------------------------------------------- render
@@ -245,6 +243,12 @@ class Workcell:
         """
         if self._renderer is None:
             self._renderer = mujoco.Renderer(self.model, height = self.render_size[0], width = self.render_size[1])
+            # a new renderer's first depth frame differs slightly from every later one; render
+            # once and discard it, so an image never depends on what the process rendered before
+            self._renderer.update_scene(self.data, camera="front")
+            self._renderer.enable_depth_rendering()
+            self._renderer.render()
+            self._renderer.disable_depth_rendering()
 
         self._renderer.update_scene(self.data, camera=camera)
         if depth:

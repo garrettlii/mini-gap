@@ -461,3 +461,29 @@ splits) before making it. Format: date, decision, why, what it affects.
   always_learned. Calibration error does not explain the repeat; a re-approach from an
   unchanged scene replays nearly the same attempt. The graph_retry result's "likely the
   camera calibration error" reading is withdrawn.
+
+## 2026-11-26: snapshot() also saves the camera-noise random streams
+- Found: restore was not exact for the workcell as a whole. The depth-noise generators
+  (_noise_rng overhead, _wrist_rng wrist) advance on every noisy render and were outside the
+  snapshot, so an attempt that is undone (paired probe, oracle executor) still shifted the
+  noise of every later observation in the episode. Physics restore was exact.
+- Found while testing the fix: a new mujoco.Renderer's first depth frame differs slightly
+  (micrometers) from every later one. Worker processes keep one workcell across episodes,
+  so which episode got that odd frame depended on job scheduling: this, more than restore,
+  is why a few paired states differed between two collections.
+- Fix: snapshot() returns a full MjData copy (state and derived quantities, restored without
+  mj_forward, so a restored state is the stepped one bit for bit) plus both generators'
+  states; restore() sets all of them. The renderer renders one frame and discards it when
+  created. The snapshot stays opaque to callers.
+- Effect on published results: rows of policies that never restore (all but oracle) are
+  unchanged. The oracle rows and the paired arbiter data were made with the leaky restore;
+  their noise draws after a probe were valid draws, just not the undisturbed episode's.
+  The warm-up frame can change the first noisy observation of each worker process, so
+  earlier runs may differ from a re-run in a few episodes. Checked by re-collecting the
+  paired data twice (with and without second tries) before deciding what to re-run.
+- Result: paired data for place and invert (40 rehearsal instances each) collected three
+  ways, the current probe with 6 workers, the probe from before second-try labels with 3,
+  and the current probe with 2, gives identical observations and labels on every state.
+  Labels no longer depend on worker count or on the second try. Earlier runs are not
+  re-run: the difference is a few episodes from micrometre depth changes, and a re-run of
+  any of them now reproduces exactly.
