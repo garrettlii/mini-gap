@@ -9,8 +9,9 @@ Newest first. One entry per working session: what works (with evidence), what's 
 - Findings (results/eval_second_try, graph_retry, seq_fallback): a fail edge from the grasp
   node helps only slightly, far less than retrying inside the node; the second-try arbiter
   ties arbiter_fallback because there is no headroom in which order goes first.
-- Next: test the calibration explanation (graph_retry with --clean-camera); find why
-  restore after an extra attempt is not exact.
+- Clean-camera check (results/graph_retry_clean) refuted the calibration explanation: a
+  graph-level retry replays nearly the same attempt; the in-node retry differs by its start.
+- Next: find why restore after an extra attempt is not exact.
 - Open: snapshot/restore exactness after a failed grasp attempt.
 
 ## Session 8: reset tolerance for towers

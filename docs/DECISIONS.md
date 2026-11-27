@@ -456,3 +456,8 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Expected, written before the run: with a clean camera graph_retry+always_learned wins
   clearly more episodes over always_learned than it does with noise on (more only-A wins,
   episode-matched). If not, the explanation in the graph_retry result is wrong.
+- Result (runs/20261126-183110_eval, 20261126-185531_eval; results/graph_retry_clean): the
+  prediction fails; with a clean camera graph_retry wins essentially nothing over
+  always_learned. Calibration error does not explain the repeat; a re-approach from an
+  unchanged scene replays nearly the same attempt. The graph_retry result's "likely the
+  camera calibration error" reading is withdrawn.

@@ -560,11 +560,23 @@ attempt, from the failure state.
 Retrying from the graph recovers only a handful of episodes (significant, but small): the
 edge is taken, but the new attempt
 mostly fails the same way, off center with one finger on the cube, and the retry inside the
-node beats it on every task. Our reading, not separately measured: the overhead camera's
-calibration error is fixed within an episode, so locating the object again yields the same
-biased estimate and the same approach, while the retry inside the node starts from wherever
-the hand ended up, next to the object, and the learned grasp's wrist view corrects from
-there. Stacking the graph retry on arbiter_fallback adds a few episodes and never loses one.
+node beats it on every task. We first guessed that the overhead camera's calibration error,
+fixed within an episode, makes the second approach repeat the first one's bias; a check
+logged before its run refutes that: with a clean camera the graph retry recovers nothing
+at all.
+
+<!-- paired: graph_retry_clean -->
+| A vs B | episodes | only A succeeded | only B succeeded | sign test p |
+|---|---|---|---|---|
+| graph_retry+always_learned vs always_learned | 1300 | 1 | 0 | 1 |
+<!-- /paired -->
+
+So the edge fails for a plainer reason: locating, planning and grasping again from a scene
+the failure left nearly unchanged replays nearly the same attempt (with noise on, per-frame
+depth noise varies it a little, which is where its few wins come from). The retry inside
+the node starts from a different state, wherever the hand ended up, and that difference is
+what makes a second attempt pay.
+Stacking the graph retry on arbiter_fallback adds a few episodes and never loses one.
 With the edges in place, the arbiter still beats always-learned on invert and unstack and
 ties on the table tasks, as without them.
 
