@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from gap.graph.edits import EditOp, apply_edit
+from gap.graph.edits import EditOp, SetParam, apply_edit
 from gap.graph.schema import Graph
 from gap.graph.validate import format_errors, validate
 from gap.rehearsal.diagnose import END, FailureReport, diagnose
@@ -24,6 +24,10 @@ Specialist = Callable[[Graph, str, str], EditOp | None]
 # critic(graph, full_report_text) -> structural edits
 Critic = Callable[[Graph, str], list[EditOp]]
 STRUCTURAL = {"timeout", "exception"}   # categories the critic handles, besides END
+# Limits a skill checks its own outcome against: (skill, param) -> +1 if a larger value
+# loosens the check, -1 if a smaller one does. Loosening past the default hides a failure.
+CHECK_LIMITS = {("verify_grasp", "width_max"): 1, ("verify_grasp", "width_min"): -1,
+                ("move_to_pose", "tolerance"): 1}
 
 
 @dataclass
@@ -36,6 +40,7 @@ class LoopConfig:
     seed_offset: int = 0         # which block of rehearsal seeds to optimize on
     proposals_per_iter: int = 2  # specialist proposals tried per iteration
     camera_noise: bool = False   # rehearse with the overhead camera noise model
+    guard_checks: bool = True    # reject edits that loosen a check past its default
 
 
 def improve(graph: Graph, cfg: LoopConfig, specialist: Specialist, critic: Critic,
@@ -61,6 +66,10 @@ def improve(graph: Graph, cfg: LoopConfig, specialist: Specialist, critic: Criti
                    "report": text,
                    "edit": edit.model_dump(by_alias=True), "success_before": best,
                    "n": cfg.n_instances, "success_after": None, "accepted": False, "invalid": None}
+            widened = widens_check(graph, edit) if cfg.guard_checks else None
+            if widened:
+                run.append_jsonl("edits.jsonl", {**row, "invalid": widened})
+                continue
             candidate = apply_edit(graph, edit)
             errors = validate(candidate)
             if errors:
@@ -110,6 +119,21 @@ def _proposals(graph: Graph, report: FailureReport, specialist: Specialist, crit
         if _describe(edit) not in tried.setdefault(END, []):
             tried[END].append(_describe(edit))
             yield edit, END, text
+
+
+def widens_check(graph: Graph, edit: EditOp) -> str | None:
+    """Why `edit` loosens a check limit past the skill's default, or None. Moving a limit
+    back toward its default is allowed: that is how a too-tight check gets fixed."""
+    if not isinstance(edit, SetParam) or edit.node not in graph.ids():
+        return None
+    skill = graph.node(edit.node).skill
+    sign = CHECK_LIMITS.get((skill, edit.param))
+    if sign is None:
+        return None
+    default = registry.get(skill).params[edit.param].default
+    if (edit.value - default) * sign <= 0:
+        return None
+    return f"{edit.param}={edit.value} loosens the {skill} check past its default {default}"
 
 
 def node_text(report: FailureReport, node: str) -> str:

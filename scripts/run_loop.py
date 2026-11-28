@@ -44,10 +44,13 @@ def main() -> None:
                     help="configs/models.yaml key: the 2B repair model or the 4B planner model")
     ap.add_argument("--camera-noise", action="store_true",
                     help="rehearse as deployed: RGB-D locator and the camera noise model")
+    ap.add_argument("--allow-check-widening", action="store_true",
+                    help="accept edits that loosen a check past its default (pre-guard loops)")
     args = ap.parse_args()
 
     cfg = LoopConfig(args.task, n_instances=args.n, max_iters=args.iters,
-                     seed_offset=args.seed_offset, camera_noise=args.camera_noise)
+                     seed_offset=args.seed_offset, camera_noise=args.camera_noise,
+                     guard_checks=not args.allow_check_widening)
     name = f"loop_{args.task}_{args.bug or args.start}_{args.specialist.split('_')[0]}"
     name += "_noise" if args.camera_noise else ""
     run = RunDir(name, {**vars(args), "loop": vars(cfg)})

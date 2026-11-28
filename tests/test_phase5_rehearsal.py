@@ -101,3 +101,28 @@ def test_loop_keeps_the_fixing_edit_and_logs_every_proposal(tmp_path):
     rows = read_jsonl(run.path / "edits.jsonl")
     assert rows[-1]["accepted"] and rows[-1]["success_after"] > rows[-1]["success_before"]
     assert "close" in rows[-1]["report"], "the logged report is the text the specialist saw"
+
+
+def test_loop_rejects_loosening_a_check_but_allows_restoring_it(tmp_path):
+    from gap.graph.edits import SetParam
+    from gap.rehearsal.loop import LoopConfig, improve, widens_check
+    from gap.rehearsal.seeded_bugs import buggy_graph
+    from gap.utils.runs import RunDir, read_jsonl
+
+    assert widens_check(PLACE, SetParam(node="check", param="width_max", value=0.08))
+    assert widens_check(PLACE, SetParam(node="check", param="width_min", value=0.0))
+    assert not widens_check(PLACE, SetParam(node="check", param="width_max", value=0.045))
+    assert not widens_check(PLACE, SetParam(node="plan", param="depth", value=0.01))
+
+    def specialist(graph, node, text):     # tries to hide the diagonal grasp first, then fixes it
+        if node == "check":
+            return SetParam(node="check", param="width_max", value=0.08)
+        return SetParam(node="plan", param="yaw_offset", value=0.0) if node == "plan" else None
+
+    run = RunDir("loop_guard_test", {}, root=tmp_path)
+    cfg = LoopConfig(task="place", n_instances=3, max_iters=3, workers=1)
+    fixed = improve(buggy_graph("place", "diagonal_grasp"), cfg, specialist, lambda g, t: [], run)
+    assert fixed.node("check").params.get("width_max", 0.045) == 0.045
+    assert fixed.node("plan").params["yaw_offset"] == 0.0
+    rows = read_jsonl(run.path / "edits.jsonl")
+    assert any("loosens" in (r["invalid"] or "") and r["success_after"] is None for r in rows)

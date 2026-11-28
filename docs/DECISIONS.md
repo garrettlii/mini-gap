@@ -500,3 +500,17 @@ splits) before making it. Format: date, decision, why, what it affects.
 - Held-out success alone overstates these repairs: the 2B often widens a verify band to its
   maximum instead of fixing the grasp. The write-up reads the accepted edits and says so;
   no check-widening guard was added to the loop.
+
+## 2026-11-28: The loop rejects edits that loosen a check past its default
+- loop.CHECK_LIMITS names the limits a skill checks its own outcome against: verify_grasp
+  width_max and width_min, move_to_pose tolerance. A set_param that moves one of them looser
+  than the skill's default is logged to edits.jsonl as invalid (with the reason) and never
+  rehearsed. Moving a limit back toward its default is allowed, so a too-tight check can
+  still be fixed. Why: with the GRPO specialist, the loop made seeded grasp bugs pass by
+  widening verify_grasp's band to its maximum, and held-out task success counted that as
+  a fix.
+- On by default (LoopConfig.guard_checks); run_loop --allow-check-widening reproduces the
+  earlier loops. The 4B loops in results/loop_bugs are unaffected: none of their accepted
+  edits loosened a check, and rejected edits never change the graph.
+- Not covered: structural edits that remove a verify node, and perception thresholds
+  (sat_min, min_pixels), which tune detection rather than check an outcome.
