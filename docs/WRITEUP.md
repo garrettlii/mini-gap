@@ -34,7 +34,8 @@ failure is the best policy tested on every task, or tied with it.
 Told which node is broken, the trained repair model fixes more held-out bugs than the
 untrained one on every task, including the held-out task. Used as the loop's specialist, it
 often makes a seeded grasp bug pass by widening the grasp check until it stops firing,
-instead of fixing the grasp. The rehearsal loop repairs seeded grasp-geometry bugs on every
+instead of fixing the grasp; once the loop rejects such edits, it makes the same repairs as the
+larger model. The rehearsal loop repairs seeded grasp-geometry bugs on every
 task, but the local 4B model's first-draft graphs fail stack and sort, and single edits do
 not repair them under camera noise.
 
@@ -746,7 +747,26 @@ there because that evaluation hands the model the broken node. In the loop, the 
 for a diagonal grasp is the verify check, and widening a band is what the 2B learned to do
 for band bugs. The loop accepts any edit that raises rehearsal success, so nothing stops it.
 Rejecting edits that widen a check past its default, or scoring held-out runs on the grasp
-itself as well as task success, would close this gap; neither is implemented.
+itself as well as task success, would close this gap. We implemented the first: the loop now
+rejects, without rehearsing it, any parameter edit that moves a check limit (the verify band's
+two limits, the motion arrival tolerance) looser than the skill's default; moving a limit back
+toward its default is still allowed. The same twelve loops with the guard:
+
+<!-- table: loop_bugs_grpo_guard -->
+| method | diagonal_grasp | grasp_too_deep | tight_verify | no_release |
+|---|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) |
+| after_loop | 0.97 [0.93, 0.99] (186/192) | 0.97 [0.93, 0.99] (186/192) | 0.30 [0.24, 0.37] (58/192) | 0.00 [0.00, 0.02] (0/192) |
+<!-- /table -->
+
+On diagonal_grasp the guard rejects the band widening, the loop goes on to the grasp planner,
+and the 2B resets `yaw_offset` to zero, the same repair the 4B loop made. On tight_verify for
+place and stack it keeps proposing upper limits above the default, which the guard rejects,
+and the bug stays unfixed, as it did with the 4B. On sort it no longer widens the second
+cube's check. Every run's held-out result now equals the 4B loop's, so with the guard the
+trained 2B can stand in for the 4B as the loop's specialist on these bugs. The specialist is
+told a rejected edit was "already tried without improvement", not why it was rejected;
+telling it the default it may not loosen past might fix tight_verify, and is untested.
 
 Run under deployment conditions instead (RGB-D locator and camera noise, starting from the
 planner's graph), the loop accepted no edit on any task: held-out place success stayed at

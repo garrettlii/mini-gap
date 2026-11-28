@@ -8,9 +8,14 @@ Newest first. One entry per working session: what works (with evidence), what's 
 - Finding: most of those wins widen the verify band's width_max past its default (often to
   0.08, the gripper's full opening) rather than fixing yaw; only grasp-depth fixes on place and
   stack are clean (edits.jsonl). README intro no longer says the 2B takes over repair.
-- Next: reject edits that widen a check past its default (or score the grasp on held-out
-  runs), then re-run these loops; optional higher-temperature GRPO.
-- Open: whether the check-widening also appears from planner graphs under camera noise.
+- Guard: the loop rejects set_param edits that loosen a check limit past its default
+  (loop.CHECK_LIMITS; test_loop_rejects_loosening_a_check_but_allows_restoring_it; phase 5
+  68 passed). Re-run (results/loop_bugs_grpo_guard): every held-out result equals the 4B
+  loop's; diagonal_grasp is now fixed through yaw_offset.
+- Next: tell the specialist why the guard rejected an edit (may fix tight_verify); optional
+  higher-temperature GRPO.
+- Open: whether the check-widening also appears from planner graphs under camera noise; the
+  guard does not cover removing a verify node.
 
 ## Session 9: grasp-node retry edges and a second-try-aware arbiter
 - Works: run_eval method graph_retry+<policy> (policies.retry_graph); paired probe records

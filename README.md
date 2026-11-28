@@ -227,6 +227,20 @@ raises the check's upper width limit to the gripper's full opening, so the diago
 still happens and the check stops flagging it. Only its grasp-depth fixes on place and stack
 are clean repairs. Details in docs/WRITEUP.md, section 5.4.
 
+The loop now rejects any edit that loosens a check past its default. The same 2B loops with
+that guard:
+
+<!-- table: loop_bugs_grpo_guard by=task -->
+| method | place | stack | sort |
+|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) |
+| after_loop | 0.50 [0.44, 0.56] (128/256) | 0.50 [0.44, 0.56] (128/256) | 0.68 [0.62, 0.73] (174/256) |
+<!-- /table -->
+
+With the guard, the diagonal-grasp runs become real repairs (the 2B resets the grasp yaw at
+the next suspect node), and the tight-verify runs on place and stack fail again. Every run's
+held-out result now equals the 4B loop's.
+
 **Repair models, in isolation** (fraction of held-out bugs fixed by one edit when the model
 is told which node is broken; sort is held out from training):
 
