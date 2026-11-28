@@ -487,3 +487,16 @@ splits) before making it. Format: date, decision, why, what it affects.
   Labels no longer depend on worker count or on the second try. Earlier runs are not
   re-run: the difference is a few episodes from micrometre depth changes, and a re-run of
   any of them now reproduces exactly.
+
+## 2026-11-28: The trained repair model inside the loop
+- The twelve seeded-bug loops were re-run with the GRPO adapter
+  (runs/20261125-161544_train_grpo/adapter) on the 2B model as the specialist; the 4B stays
+  the critic and every other setting matches the 4B runs. Why: the repair-model result came
+  only from eval_repair, which hands the model the broken node, so it said nothing about the
+  model doing the loop's specialist job.
+- Published as their own label, results/loop_bugs_grpo.json, not merged into loop_bugs.
+  Why: load_cells names loop cells start_graph/after_loop whatever the specialist (a test pins
+  those names), so merging would pool the 2B and 4B runs into one row.
+- Held-out success alone overstates these repairs: the 2B often widens a verify band to its
+  maximum instead of fixing the grasp. The write-up reads the accepted edits and says so;
+  no check-widening guard was added to the loop.

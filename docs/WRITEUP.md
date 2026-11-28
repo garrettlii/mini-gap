@@ -31,8 +31,10 @@ always-learned on every task, and switching to the other executor instead adds t
 on the stacked tasks, clearly on the taller stack. The arbiter's choice with a switch on
 failure is the best policy tested on every task, or tied with it.
 
-The trained repair model fixes more held-out bugs than the untrained one on every task,
-including the held-out task. The rehearsal loop repairs seeded grasp-geometry bugs on every
+Told which node is broken, the trained repair model fixes more held-out bugs than the
+untrained one on every task, including the held-out task. Used as the loop's specialist, it
+often makes a seeded grasp bug pass by widening the grasp check until it stops firing,
+instead of fixing the grasp. The rehearsal loop repairs seeded grasp-geometry bugs on every
 task, but the local 4B model's first-draft graphs fail stack and sort, and single edits do
 not repair them under camera noise.
 
@@ -671,8 +673,10 @@ is the right repair for these bugs and it transfers to nodes of a task never see
 training, but the held-out bugs come from the same four families as the training bugs, so
 this shows transfer across tasks and nodes, not repair of new kinds of bugs. No model fixes
 the family where the band's lower limit is set too high: all three edit the upper limit. The
-teacher never fixed that family either, so SFT had no examples of it. No edit deleted a
-check, raised retry budgets, or padded wait times, the reward-hacking patterns we looked for.
+teacher never fixed that family either, so SFT had no examples of it. In this one-edit
+evaluation no edit deleted a check, raised retry budgets, or padded wait times, the
+reward-hacking patterns we looked for. Inside the loop the GRPO model does weaken a check
+(section 5.4).
 
 During GRPO the four samples drawn for a prompt became identical partway through training,
 which gives GRPO no learning signal on that prompt. A higher sampling temperature or more
@@ -713,6 +717,36 @@ upper limit below the cube's width, and later rounds move to other nodes. On sor
 proposal clears the width. No loop restores the missing release. Diagnosis blames the retreat
 node that follows it, where the cube leaves with the hand; the specialist raises the retreat
 height, and the critic inserts motion or retry steps instead of an open-gripper node.
+
+The same twelve loops with the GRPO-trained 2B model as the specialist (the 4B model stays
+the critic; same seeds and settings), by bug, pooled over tasks:
+
+<!-- table: loop_bugs_grpo -->
+| method | diagonal_grasp | grasp_too_deep | tight_verify | no_release |
+|---|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) | 0.00 [0.00, 0.02] (0/192) |
+| after_loop | 0.97 [0.93, 0.99] (186/192) | 0.98 [0.96, 0.99] (189/192) | 0.98 [0.96, 0.99] (189/192) | 0.00 [0.00, 0.02] (0/192) |
+<!-- /table -->
+
+Every accepted edit came from the specialist; no critic edit was accepted. Held-out success
+matches or exceeds the 4B loop on every bug, but it overstates the repair
+(runs/*_loop_*_mlx/edits.jsonl). On every diagonal_grasp run, the first edit the 2B proposed,
+at the verify node diagnosis blames, raised `width_max` from 0.045 to 0.08: the top of its
+range and the gripper's full opening. That disables the band's upper limit. The hand still
+grasps the cube across its diagonal, and the check no longer reports it. The 4B loop instead
+reset `yaw_offset` to zero. On tight_verify the 2B edits the right parameter but sets it well
+past the default (0.06 on place, 0.08 on stack), which repairs the bug and loosens the check
+beyond its design. On sort, after the right fix at the broken node, it widened the other
+cube's check to 0.08 to pass the last rehearsal instances; it did the same after the correct
+depth fix on sort's grasp_too_deep. Only the grasp-depth fixes on place and stack are clean.
+Neither model restores the missing release.
+
+This is the check-weakening edit section 5.3 looked for and did not find. It did not show
+there because that evaluation hands the model the broken node. In the loop, the node blamed
+for a diagonal grasp is the verify check, and widening a band is what the 2B learned to do
+for band bugs. The loop accepts any edit that raises rehearsal success, so nothing stops it.
+Rejecting edits that widen a check past its default, or scoring held-out runs on the grasp
+itself as well as task success, would close this gap; neither is implemented.
 
 Run under deployment conditions instead (RGB-D locator and camera noise, starting from the
 planner's graph), the loop accepted no edit on any task: held-out place success stayed at

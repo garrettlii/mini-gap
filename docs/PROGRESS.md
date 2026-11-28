@@ -2,6 +2,16 @@
 
 Newest first. One entry per working session: what works (with evidence), what's next, open questions.
 
+## Session 10: trained 2B as the loop's specialist
+- Works: 12 seeded-bug loops with the GRPO 2B specialist (runs/20261128-10*_loop_*_mlx,
+  results/loop_bugs_grpo.json). Held-out success matches or beats the 4B loop on every bug.
+- Finding: most of those wins widen the verify band's width_max past its default (often to
+  0.08, the gripper's full opening) rather than fixing yaw; only grasp-depth fixes on place and
+  stack are clean (edits.jsonl). README intro no longer says the 2B takes over repair.
+- Next: reject edits that widen a check past its default (or score the grasp on held-out
+  runs), then re-run these loops; optional higher-temperature GRPO.
+- Open: whether the check-widening also appears from planner graphs under camera noise.
+
 ## Session 9: grasp-node retry edges and a second-try-aware arbiter
 - Works: run_eval method graph_retry+<policy> (policies.retry_graph); paired probe records
   second-try outcomes; policy seq_fallback (arbiter_seq.pkl); report table option splits=.

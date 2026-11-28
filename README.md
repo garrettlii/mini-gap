@@ -3,7 +3,8 @@
 Laptop-scale Graph-as-Policy in MuJoCo: LLM agents write robot policies as skill graphs,
 simulator rehearsal grades them, per-node diagnosis drives repairs, and a learned arbiter
 decides per node whether a scripted skill or a learned policy should act. A small Qwen model
-is fine-tuned with GRPO on simulator rewards to take over graph repair.
+(2B) is fine-tuned with GRPO on simulator rewards to propose the loop's per-node parameter
+edits; a larger local Qwen (4B) still writes the graphs and proposes structural edits.
 
 Builds on [GaP](https://arxiv.org/abs/2607.05369), [CaP-X](https://capgym.github.io/), and
 [AW-0](https://arxiv.org/abs/2610.30136).
@@ -210,8 +211,24 @@ the loop):
 | after_loop | 0.50 [0.44, 0.56] (128/256) | 0.50 [0.44, 0.56] (128/256) | 0.68 [0.62, 0.73] (174/256) |
 <!-- /table -->
 
-**Repair models** (fraction of held-out bugs fixed by one edit; sort is held out from
-training):
+The same loops with the GRPO-trained 2B model as the specialist instead of the 4B (same
+seeds; the 4B is still the critic):
+
+<!-- table: loop_bugs_grpo by=task -->
+| method | place | stack | sort |
+|---|---|---|---|
+| start_graph | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) | 0.00 [0.00, 0.01] (0/256) |
+| after_loop | 0.75 [0.69, 0.80] (192/256) | 0.75 [0.69, 0.80] (192/256) | 0.70 [0.64, 0.76] (180/256) |
+<!-- /table -->
+
+Held-out success counts a graph as fixed whenever the task succeeds, and the 2B often gets
+there by loosening the grasp check instead of fixing the grasp: on the diagonal-grasp bug it
+raises the check's upper width limit to the gripper's full opening, so the diagonal grasp
+still happens and the check stops flagging it. Only its grasp-depth fixes on place and stack
+are clean repairs. Details in docs/WRITEUP.md, section 5.4.
+
+**Repair models, in isolation** (fraction of held-out bugs fixed by one edit when the model
+is told which node is broken; sort is held out from training):
 
 <!-- table: repair by=task -->
 | method | place | stack | sort |
@@ -237,6 +254,8 @@ uv run python scripts/train_repair.py grpo --logs runs/*_gen_repairs/edits.jsonl
 uv run python scripts/eval_repair.py --adapters sft=runs/<sft>/adapter grpo=runs/<grpo>/adapter
 uv run python scripts/run_loop.py --task place --bug diagonal_grasp --specialist planner_repo
 uv run python -m gap.eval.report --publish loop_bugs runs/<one run_loop dir per task and bug>
+# loops with the trained 2B specialist: add --specialist mlx_repo --adapter runs/<grpo>/adapter
+uv run python -m gap.eval.report --publish loop_bugs_grpo runs/<those run_loop dirs>
 uv run python -m gap.eval.run_eval --models runs/<train_arbiter> \
     --methods code graph_single graph_multi graph_multi+learned_arbiter
 uv run python -m gap.eval.report --publish eval_methods runs/<eval>
